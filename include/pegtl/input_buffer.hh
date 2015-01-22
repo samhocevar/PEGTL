@@ -118,7 +118,7 @@ namespace pegtl
 	    return * m_run;
 	 }
 	 //	 PEGTL_DEBUG( m_record << ( m_run == m_end ) << " " << m_runpos << " " << m_vecpos << " " << m_vector.size() << " " << m_count );
-	 PEGTL_THROW( "pegtl: buffer iterator access error" );
+	 PEGTL_THROW( "buffer iterator access error" );
       }
 
    private:
@@ -320,7 +320,7 @@ namespace pegtl
       {
 	 m_run = iter;
       }
-      
+
    protected:
       mutable buffer_impl< Iterator > m_buffer;
       iterator m_run;
@@ -328,7 +328,7 @@ namespace pegtl
       void throw_at_eof() const
       {
 	 if ( eof() ) {
-	    PEGTL_THROW( "pegtl: attempt to read beyond end of input" );
+	    PEGTL_THROW( "attempt to read beyond end of input" );
 	 }
       }
    };

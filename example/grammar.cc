@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #include <pegtl.hh>
@@ -7,7 +7,7 @@ namespace grammar
 {
    // The first non-trivial grammar used during development and debugging of the
    // library. This grammar recognises a small subset of parsing expressions.
-   
+
    using namespace pegtl;
 
    struct read_expr;
@@ -56,12 +56,8 @@ namespace grammar
 int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::basic_parse_string_nothrow< grammar::read_file >( argv[ arg ] ) ) {
-	 std::cerr << "input " << argv[ arg ] << " valid\n";
-      }
-      else {
-	 std::cerr << "input " << argv[ arg ] << " invalid\n";
-      }
+      pegtl::basic_parse_string< grammar::read_file >( argv[ arg ] );
+      std::cerr << "input " << argv[ arg ] << " valid\n";
    }
    return 0;
 }

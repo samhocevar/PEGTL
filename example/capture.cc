@@ -38,12 +38,8 @@ int main( int argc, char ** argv )
    pegtl::capture_map map;
 
    for ( int i = 1; i < argc; ++i ) {
-      if ( pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ], map ) ) {
-	 PEGTL_PRINT( "input " << argv[ i ] << " map entry " << map[ 42 ] );
-      }
-      else {
-	 PEGTL_PRINT( "input " << argv[ i ] << " invalid" );
-      }
+      pegtl::basic_parse_string< example::grammar >( argv[ i ], map );
+      PEGTL_PRINT( "input " << argv[ i ] << " map entry " << map[ 42 ] );
    }
    return 0;
 }

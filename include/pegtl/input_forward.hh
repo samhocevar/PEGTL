@@ -90,7 +90,7 @@ namespace pegtl
       {
 	 return * m_iterator;
       }
-      
+
       const value_type * operator-> () const
       {
 	 return m_iterator.operator->();
@@ -114,7 +114,7 @@ namespace pegtl
       {
 	 return m_location;
       }
-      
+
       bool operator== ( const forward_iterator & i ) const
       {
 	 return m_iterator == i.m_iterator;
@@ -196,7 +196,7 @@ namespace pegtl
       {
 	 m_run = iter;
       }
-      
+
       std::string debug_escape( const iterator & begin, const iterator & end ) const
       {
 	 std::string nrv;
@@ -216,7 +216,7 @@ namespace pegtl
       void throw_at_eof() const
       {
 	 if ( eof() ) {
-	    PEGTL_THROW( "pegtl: attempt to read beyond end of input" );
+	    PEGTL_THROW( "attempt to read beyond end of input" );
 	 }
       }
    };

@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -11,21 +11,24 @@
 
 namespace pegtl
 {
-   struct dummy_debug
+   struct debug_base : private nocopy< debug_base >
    {
-      dummy_debug()
+   public:
+      virtual ~debug_base()
       { }
 
-      template< typename TopRule >
-      explicit
-      dummy_debug( const tag< TopRule > & )
-      { }
-
-      static void log( const std::string & message )
+      virtual void log( const std::string & message )
       {
-	 std::cerr << message << std::endl;
+	 std::cerr << "pegtl: " << message << std::endl;
       }
 
+   protected:
+      debug_base()
+      { }
+   };
+
+   struct dummy_debug : public debug_base
+   {
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )
       {
@@ -33,7 +36,7 @@ namespace pegtl
 	    return true;
 	 }
 	 else if ( Must ) {
-	    PEGTL_THROW( "pegtl: required rule " << demangle< Rule >() << " failed" );
+	    PEGTL_THROW( "required rule " << demangle< Rule >() << " failed" );
 	 }
 	 return false;
       }

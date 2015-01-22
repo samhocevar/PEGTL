@@ -35,24 +35,17 @@ namespace example
 
 int main( int argc, char ** argv )
 {
-   int result = 0;
-
    // Parse all command-line arguments with the grammar.
 
    for ( int i = 1; i < argc; ++i ) {
       // The member of the parse-family of functions used here
       // - uses a basic_debug for diagnostics,
       // - takes its input from a std::string,
-      // - reports success or failure in its return value,
-      // and is therefore named basic_parse_string_nothrow().
+      // and is therefore named basic_parse_string().
+      // As all parse functions, it returns on success, and
+      // throws a pegtl::parse_error on failure.
 
-      const bool success = pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
-
-      // The return value indicates whether the input matched the grammar.
-      // Here we accumulate the number of failures in the return value of
-      // the program.
-
-      result += ! success;
+      pegtl::basic_parse_string< example::grammar >( argv[ i ] );
    }
-   return result;
+   return 0;
 }

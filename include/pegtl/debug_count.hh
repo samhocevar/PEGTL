@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -17,12 +17,12 @@ namespace pegtl
 	      m_nest_counter( 0 )
       { }
 
-      size_t rule() const
+      unsigned rule() const
       {
 	 return m_rule_counter;
       }
 
-      size_t nest() const
+      unsigned nest() const
       {
 	 return m_nest_counter;
       }
@@ -45,8 +45,8 @@ namespace pegtl
       }
 
    private:
-      size_t m_rule_counter;
-      size_t m_nest_counter;      
+      unsigned m_rule_counter;
+      unsigned m_nest_counter;
    };
 
 } // pegtl

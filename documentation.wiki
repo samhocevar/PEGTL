@@ -32,6 +32,8 @@ Still in the middle of a series of enhancements and additions on the road to 1.0
     # 'less speed, readable error messages',
     # 'try full-speed, re-parse w/less-speed on error',
     # plus optionally full trace of all invoked rules.
+  * User-defined logging abstractions, supplied:
+    # simple logging to `std::cerr`.
   * Some generic actions, like sub-expression capturing.
   * Some trivial automatic optimisations, to be extended.
   * Diagnostics with readable printing of grammar rules.
@@ -168,10 +170,9 @@ The _rules_ to invoke _actions_, and some simple _actions_, are defined in the `
 ===Parsers===
 
 A _parser_ is a function that simplifies the parsing process.
-It usually takes care of setting up an appriate _input_ and/or _debug, and defines the error-handling strategy, of which there are currently two:
+It usually takes care of setting up an appriate _input_ and/or _debug.
 
-  # Always return a `bool` that shows the success (the functions named `...nothrow`),
-  # return `true` on success, and throw on failure (the functions named `...throws`).
+All parser functions return on success, and throw a `pegtl::parse_error`, which is derived from `std::runtime_error`, on failure.
 
 Many _parser_ functions relate directly to a _debug_ class, e.g. all _parser_ functions named `basic...` internally use a `basic_debug`.
 
@@ -229,26 +230,19 @@ namespace example
 
 int main( int argc, char ** argv )
 {
-   int result = 0;
-
    // Parse all command-line arguments with the grammar.
 
    for ( int i = 1; i < argc; ++i ) {
       // The member of the parse-family of functions used here
       // - uses a basic_debug for diagnostics,
       // - takes its input from a std::string,
-      // - reports success or failure in its return value,
-      // and is therefore named basic_parse_string_nothrow().
+      // and is therefore named basic_parse_string().
+      // As all parse functions, it returns on success, and
+      // throws a pegtl::parse_error on failure.
 
-      const bool success = pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
-
-      // The return value indicates whether the input matched the grammar.
-      // Here we accumulate the number of failures in the return value of
-      // the program.
-
-      result += ! success;
+      pegtl::basic_parse_string< example::grammar >( argv[ i ] );
    }
-   return result;
+   return 0;
 }
 }}}
 
@@ -262,7 +256,7 @@ The PEGTL includes a function `read_string()` that, given a filename as `std::st
 The resulting string can then be passed to any of the functions that parse a string like so:
 
 {{{
-      pegtl::basic_parse_string_nothrow< example::grammar >( pegtl::read_string( filename ) );
+      pegtl::basic_parse_string< example::grammar >( pegtl::read_string( filename ) );
 }}}
 
 *Using `mmap(2)`*
@@ -271,7 +265,7 @@ The _parser_ functions defined in `include/pegtl/parse_filename.hh` take a `std:
 This is the fastest way of parsing a file, and is recommended as long as the virtual address space is not exhausted.
 
 {{{
-      pegtl::basic_parse_file_nothrow< example::grammar >( filename );
+      pegtl::basic_parse_file< example::grammar >( filename );
 }}}
 
 *Using a Stream*
@@ -282,7 +276,7 @@ Since the stream allows only single-pass iteration, it *must* be used with one o
 {{{
       std::ifstream ifs( filename, std::ios_base::in | std::ios_base::binary );
       std::noskipws( ifs );
-      pegtl::basic_parse_input_nothrow< example::grammar >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() );
+      pegtl::basic_parse_input< example::grammar >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() );
 }}}
 
 Note that the seemingly redundant parts of setting up the stream are required due to the broken design of the C++ standard library.
@@ -473,12 +467,8 @@ int main( int argc, char ** argv )
    pegtl::capture_map map;
 
    for ( int i = 1; i < argc; ++i ) {
-      if ( pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ], map ) ) {
-	 PEGTL_PRINT( "input " << argv[ i ] << " map entry " << map[ 42 ] );
-      }
-      else {
-	 PEGTL_PRINT( "input " << argv[ i ] << " invalid" );
-      }
+      pegtl::basic_parse_string< example::grammar >( argv[ i ], map );
+      PEGTL_PRINT( "input " << argv[ i ] << " map entry " << map[ 42 ] );
    }
    return 0;
 }
@@ -567,9 +557,9 @@ With a `using namespace pegtl::ascii`, the definition of `string` _rules_ can be
 
 ===Action Rules===
 
-|| *Expression*    || *Action Rule*                || *Description* ||
-|| `$F ...`        || `apply< F, ... >`            || Unconditionally apply all actions `F` to the empty string and all _state_ objects. ||
-|| `( R | $F ... ) || `ifapply< R, F, ... >`       || On success of `R`, apply all actions `F` to matched sub-string and all _state_ objects. ||
+|| *Expression*     || *Action Rule*                || *Description* ||
+|| `$F ...`         || `apply< F, ... >`            || Unconditionally apply all actions `F` to the empty string and all _state_ objects. ||
+|| `( R | $F ... )` || `ifapply< R, F, ... >`       || On success of `R`, apply all actions `F` to matched sub-string and all _state_ objects. ||
 
 ===Actual Actions===
 
@@ -660,13 +650,24 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 =Changelog=
 
+*PEGTL version 0.27*
+
+  * Changed the type of exceptions thrown by the library to `pegtl::parse_error`.
+  * Changed class `basic_debug` to only generate a grammar back-trace when a `pegtl::parse_error` is flying.
+  * Changed logging to use a virtual method on the _debug_ class inherited from common _debug_ base class.
+  * Removed all `*_parse_*_nothrow()` _parse_ functions.
+  * Removed the `_throws` substring from all remaining _parse_ functions and changed the return type to `void`.
+  * Added convenience classes `file_base`, `ascii_file_base` and `dummy_file_base` for custom parse functions.
+
 *PEGTL version 0.26*
 
   * Changed pretty-printing of the `until` and `if...` rules (consistency).
-  * Changed pretty-printing of rules to use ":=" instead of "===" (conciseness);
+  * Changed pretty-printing of rules to use ":=" instead of "===" (conciseness).
   * Renamed rule `action` to `ifapply` and removed rule `action_nth` (orthogonality).
   * Renamed action `apply_nth` to `nth`, and renamed some other actions (consistency).
   * Extended pretty-printing to the `apply` and `ifapply` rules (completeness).
+
+The last of these changes effectively requires custom _action_ classes to derive either from a valid _rule_ class, or from the new class `pegtl::action_helper<>`, passing itself as template argument.
 
 *PEGTL version 0.25*
 

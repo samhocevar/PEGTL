@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 // Include the only public header file for the PEGTL.
@@ -54,13 +54,8 @@ namespace example
 
 int main( int argc, char ** argv )
 {
-   int result = 0;
-
-   // Same as in first.cc.
-
    for ( int i = 1; i < argc; ++i ) {
-      const bool success = pegtl::basic_parse_string_nothrow< example::quoted >( argv[ i ] );
-      result += ! success;
+      pegtl::basic_parse_string< example::quoted >( argv[ i ] );
    }
-   return result;
+   return 0;
 }

@@ -143,13 +143,9 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       calculator::stack_type stack;
-      if ( pegtl::basic_parse_string_nothrow< calculator::read_calc >( argv[ arg ], stack ) ) {
-	 assert( stack.size() == 1 );
-	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
-      }
-      else {
-	 std::cerr << "input " << argv[ arg ] << " invalid\n";
-      }
+      pegtl::basic_parse_string< calculator::read_calc >( argv[ arg ], stack );
+      assert( stack.size() == 1 );
+      std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
    }
    return 0;
 }

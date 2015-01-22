@@ -320,11 +320,8 @@ namespace pegtl
       }
    };
 
-   struct ident1
-	 : sor< one< '_' >, alpha > {};
-
-   struct ident2
-	 : sor< digit, ident1 > {};
+   typedef sor< one< '_' >, alpha > ident1;
+   typedef sor< digit, ident1 > ident2;
 
    struct identifier
 	 : seq< ident1, star< ident2 > > {};

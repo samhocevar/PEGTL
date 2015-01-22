@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #include <pegtl.hh>
@@ -14,7 +14,13 @@ namespace
    bool test_parse( const std::string & string )
    {
       string_input< ascii_location > in( string );
-      return dummy_parse_nothrow< Rule >( in );
+      try {
+	 dummy_parse< Rule >( in );
+	 return true;
+      }
+      catch ( const parse_error & ) {
+	 return false;
+      }
    }
 
    template< typename Rule >

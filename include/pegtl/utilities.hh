@@ -32,11 +32,20 @@ namespace pegtl
 #define PEGTL_DEBUG( MeSSaGe )						\
    PEGTL_PRINT( __FILE__ << " : " << __LINE__ << " : " << MeSSaGe )
 
+   struct parse_error
+	 : public std::runtime_error
+   {
+      explicit
+      parse_error( const std::string & message )
+	    : std::runtime_error( message )
+      { }
+   };
+
 #define PEGTL_THROW( MeSSaGe )						\
-   do { std::ostringstream oss; oss << MeSSaGe; throw std::runtime_error( oss.str() ); } while( 1 )
+   do { std::ostringstream oss; oss << MeSSaGe; throw ::pegtl::parse_error( oss.str() ); } while( 1 )
 
 #define PEGTL_LOGGER( DeBuG, MeSSaGe )			\
-   do { std::ostringstream oss; oss << MeSSaGe; DeBuG::log( oss.str() ); } while( 0 )
+   do { std::ostringstream oss; oss << MeSSaGe; ( DeBuG ).log( oss.str() ); } while( 0 )
 
    inline void escape_impl( std::string & result, const int i )
    {
@@ -209,7 +218,7 @@ namespace pegtl
 	      m_fn( filename )
       {
 	 if ( m_fd < 0 ) {
-	    PEGTL_THROW( "pegtl: unable to open() file " << m_fn << " for reading errno " << errno );
+	    PEGTL_THROW( "unable to open() file " << m_fn << " for reading errno " << errno );
 	 }
       }
 
@@ -224,7 +233,7 @@ namespace pegtl
 
 	 errno = 0;
 	 if ( ::fstat( m_fd, & st ) < 0 ) {
-	    PEGTL_THROW( "pegtl: unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	    PEGTL_THROW( "unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
 	 }
 	 return size_t( st.st_size );
       }
@@ -237,9 +246,8 @@ namespace pegtl
 
 	 errno = 0;
 	 if ( nrv.size() && ( ::read( m_fd, & nrv[ 0 ], nrv.size() ) != int( nrv.size() ) ) ) {
-	    PEGTL_THROW( "pegtl: unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	    PEGTL_THROW( "unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
 	 }
-	 //	 PEGTL_PRINT( "pegtl: read " << st.st_size << " bytes from file " << m_fn );
 	 return nrv;
       }
 
@@ -270,7 +278,7 @@ namespace pegtl
 	 errno = 0;
 
 	 if ( intptr_t( m_data = static_cast< const char * >( ::mmap( 0, m_size, PROT_READ, MAP_FILE | MAP_PRIVATE, tmp.internal_fd(), 0 ) ) ) == -1 ) {
-	    PEGTL_THROW( "pegtl: unable to mmap() file " << filename << " errno " << errno );
+	    PEGTL_THROW( "unable to mmap() file " << filename << " errno " << errno );
 	 }
       }
 

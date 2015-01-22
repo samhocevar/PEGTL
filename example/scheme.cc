@@ -296,12 +296,8 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::smart_parse_file_nothrow< scheme::r6rs >( false, argv[ arg ] ) ) {
-	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
-      }
-      else {
-	 PEGTL_PRINT( "input from file " << argv[ arg ] << " invalid" );
-      }
+      pegtl::smart_parse_file< scheme::r6rs >( false, argv[ arg ] );
+      PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
    }
    return 0;
 }

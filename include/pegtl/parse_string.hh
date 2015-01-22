@@ -19,59 +19,37 @@ namespace pegtl
    // The *_parse_string_* functions set up the parser to parse a string.
 
    template< typename TopRule, typename Location = dummy_location, typename ... States >
-   bool dummy_parse_string_throws( const std::string & string, States && ... st )
+   void dummy_parse_string( const std::string & string, States && ... st )
    {
       string_input< Location > in( string );
-      return dummy_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
-   }
-
-   template< typename TopRule, typename Location = dummy_location, typename ... States >
-   bool dummy_parse_string_nothrow( const std::string & string, States && ... st )
-   {
-      string_input< Location > in( string );
-      return dummy_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... );
+      dummy_parse< TopRule >( in, std::forward< States >( st ) ... );
    }
 
    template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool basic_parse_string_throws( const std::string & string, States && ... st )
+   void basic_parse_string( const std::string & string, States && ... st )
    {
       string_input< Location > in( string );
-      return basic_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
+      basic_parse< TopRule >( in, std::forward< States >( st ) ... );
    }
 
    template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool basic_parse_string_nothrow( const std::string & string, States && ... st )
+   void trace_parse_string( const bool trace, const std::string & string, States && ... st )
    {
       string_input< Location > in( string );
-      return basic_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... );
-   }
-
-   template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool trace_parse_string_throws( const bool trace, const std::string & string, States && ... st )
-   {
-      string_input< Location > in( string );
-      return trace_parse_throws< TopRule >( trace, in, std::forward< States >( st ) ... );
-   }
-
-   template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool trace_parse_string_nothrow( const bool trace, const std::string & string, States && ... st )
-   {
-      string_input< Location > in( string );
-      return trace_parse_nothrow< TopRule >( trace, in, std::forward< States >( st ) ... );
+      trace_parse< TopRule >( trace, in, std::forward< States >( st ) ... );
    }
 
    // Please read the comment on the smart_parse_* functions in parse_generic.hh!
 
    template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool smart_parse_string_throws( const bool trace, const std::string & string, States && ... st )
+   void smart_parse_string( const bool trace, const std::string & string, States && ... st )
    {
-      return dummy_parse_string_nothrow( string, std::forward< States >( st ) ... ) || trace_parse_string_throws( trace, string, std::forward< States >( st ) ... );
-   }
-
-   template< typename TopRule, typename Location = ascii_location, typename ... States >
-   bool smart_parse_string_nothrow( const bool trace, const std::string & string, States && ... st )
-   {
-      return dummy_parse_string_nothrow( string, std::forward< States >( st ) ... ) || trace_parse_string_nothrow( trace, string, std::forward< States >( st ) ... );
+      try {
+	 dummy_parse_string( string, std::forward< States >( st ) ... );
+      }
+      catch ( const parse_error & ) {
+	 trace_parse_string( trace, string, std::forward< States >( st ) ... );
+      }
    }
 
 } // pegtl

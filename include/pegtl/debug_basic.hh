@@ -13,59 +13,42 @@ namespace pegtl
 {
    template< typename Rule, typename Input, typename Debug >
    struct basic_guard
+	 : private nocopy< basic_guard< Rule, Input, Debug > >
    {
       typedef typename Input::location_type Location;
 
-      basic_guard( Location && w, counter & t, printer & p )
-	    : m_result( 2 ),
-	      m_location( w ),
-	      m_counter( t ),
-	      m_printer( p )
+      basic_guard( Location && w, counter & t )
+	    : m_location( w ),
+	      m_counter( t )
       {
 	 m_counter.enter();
       }
 
       ~basic_guard()
       {
-	 if ( m_result > 1 ) {
-	    trace_error();
-	 }
 	 m_counter.leave();
       }
 
       bool operator() ( const bool result, const bool must )
       {
-	 if ( !( m_result = result ) && must ) {
-	    m_result = 2;
-	    throw_error();
+	 if ( ( ! result ) && must ) {
+	    PEGTL_THROW( "parsing aborted at " << m_location );
 	 }
 	 return result;
       }
 
+      const Location & location() const
+      {
+	 return m_location;
+      }
+
    protected:
-      unsigned m_result;
       const Location m_location;
       counter & m_counter;
-      printer & m_printer;
-
-      void trace_error()
-      {
-	 const std::string rule = m_printer.template rule< Rule >();
-
-	 if ( ! rule.empty() ) {
-	    PEGTL_LOGGER( Debug, "pegtl: #" << m_counter.nest() << " @" << m_location << ": " << rule );
-	 }
-      }
-
-      void throw_error()
-      {
-	 PEGTL_LOGGER( Debug, "pegtl: syntax error at " << m_location );
-	 PEGTL_THROW( "pegtl: parsing aborted at " << m_location );
-      }
    };
 
 
-   struct basic_debug
+   struct basic_debug : public debug_base
    {
       template< typename TopRule >
       explicit
@@ -73,16 +56,18 @@ namespace pegtl
 	    : m_printer( help )
       { }
 
-      static void log( const std::string & message )
-      {
-	 std::cerr << message << std::endl;
-      }
-
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )
       {
-	 basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter, m_printer );
-	 return d( Rule::template match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
+	 basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter );
+
+	 try {
+	    return d( Rule::template match< Must >( in, * this, std::forward< States >( st ) ... ), Must );
+	 }
+	 catch ( const parse_error & ) {
+	    PEGTL_LOGGER( * this, "#" << m_counter.nest() << " @" << d.location() << ": " << m_printer.template rule< Rule >() );
+	    throw;
+	 }
       }
 
    protected:

@@ -157,12 +157,8 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       std::shared_ptr< sexpression::node_base > result;
-      if ( pegtl::trace_parse_file_nothrow< sexpression::read_file >( true, argv[ arg ], result ) ) {
-	 PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
-      }
-      else {
-	 PEGTL_PRINT( "input from file " << argv[ arg ] << " invalid" );
-      }
+      pegtl::trace_parse_file< sexpression::read_file >( true, argv[ arg ], result );
+      PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
    }
    return 0;
 }

@@ -48,7 +48,7 @@ namespace pegtl
       {
 	 m_location( * m_iterator );
 	 ++m_iterator;
-	 return *this;
+	 return * this;
       }
 
       const Location & location() const
@@ -64,11 +64,6 @@ namespace pegtl
       bool operator!= ( const forward_iterator & i ) const
       {
 	 return m_iterator != i.m_iterator;
-      }
-
-      bool operator>= ( const forward_iterator & i ) const
-      {
-	 return m_iterator >= i.m_iterator;
       }
 
       void assign( const Iterator & it )
@@ -98,17 +93,12 @@ namespace pegtl
 
       bool eof() const
       {
-	 return m_run >= m_end;
+	 return m_run == m_end;
       }
 
       const iterator & here() const
       {
 	 return m_run;
-      }
-
-      const iterator & end() const
-      {
-	 return m_end;
       }
 
       forward_input & rewind()

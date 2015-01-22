@@ -20,21 +20,9 @@ namespace pegtl
 	    : m_result( 2 ),
 	      m_location( w ),
 	      m_counter( t ),
-	      m_printer( p ),
-	      m_must_old( t.must() )
+	      m_printer( p )
       {
 	 m_counter.enter();
-      }
-
-      basic_guard( Location && w, counter & t, printer & p, const bool must )
-	    : m_result( 2 ),
-	      m_location( w ),
-	      m_counter( t ),
-	      m_printer( p ),
-	      m_must_old( t.must() )
-      {
-	 m_counter.enter();
-	 m_counter.set_must( must );
       }
 
       ~basic_guard()
@@ -42,12 +30,12 @@ namespace pegtl
 	 if ( m_result > 1 ) {
 	    trace_error();
 	 }
-	 m_counter.leave( m_must_old );
+	 m_counter.leave();
       }
 
-      bool operator() ( const bool result )
+      bool operator() ( const bool result, const bool must )
       {
-	 if ( !( m_result = result ) && m_counter.must() ) {
+	 if ( !( m_result = result ) && must ) {
 	    m_result = 2;
 	    throw_error();
 	 }
@@ -59,8 +47,6 @@ namespace pegtl
       const Location m_location;
       counter & m_counter;
       printer & m_printer;
-
-      const bool m_must_old;
 
       void trace_error()
       {
@@ -86,25 +72,13 @@ namespace pegtl
 	    : m_printer( help )
       { }
 
-      bool must() const
-      {
-	 return m_counter.must();
-      }
-
-      template< typename Rule, typename Input, typename... Class >
+      template< bool Must, typename Rule, typename Input, typename... Class >
       bool match( Input & in, Class && ... cl )
       {
 	 basic_guard< Rule, Input > d( in.location(), m_counter, m_printer );
-	 return d( Rule::template s_match( in, *this, std::forward< Class >( cl ) ... ) );
+	 return d( Rule::template s_match< Must >( in, *this, std::forward< Class >( cl ) ... ), Must );
       }
 	 
-      template< typename Rule, typename Input, typename... Class >
-      bool match( const bool must, Input & in, Class && ... cl )
-      {
-	 basic_guard< Rule, Input > d( in.location(), m_counter, m_printer, must );
-	 return d( Rule::template s_match( in, *this, std::forward< Class >( cl ) ... ) );
-      }
-
    protected:
       counter m_counter;
       printer m_printer;

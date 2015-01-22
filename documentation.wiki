@@ -16,7 +16,7 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 ===Status===
 
-PEGTL version 0.14 is ready, and should work "just fine"; it continues with some smaller improvements and streamlining.
+PEGTL version 0.15 is ready, and should work "just fine"; it continues with some smaller improvements and streamlining.
 
 *Features*
 
@@ -137,23 +137,22 @@ For the resulting grammar there is no difference whether a `typedef` or a `struc
 However it is recommended to _not_ use `typedef` because the PEGTL uses the name of the `struct` in diagnostic messages, which can enhance readability.
 
 The easiest way to do some actual parsing is by calling one of the `parse` front-end functions with two strings as argument.
-In this example the function is `basic_parse_arg_nothrow()` which uses a `basic_debug` for diagnostic purposes (see below), and takes (at least) two arguments, a string `s` and an integer `i`, where the assumption is that `s == argv[i]`.
-This assumption is only used in error messages that show where the erroneous input came from.
-The _rule_ is, by necessity, a template argument to `basic_parse_arg_nothrow()`.
+In this example the function is `basic_parse_string_nothrow()` which uses a `basic_debug` for diagnostic purposes (see below), and takes (at least) one argument, a string `s` with the input to the parser.
+The _rule_ is, by necessity, a template argument to `basic_parse_string_nothrow()`.
 
 {{{
 int main( int argc, char ** argv )
 {
    for ( int i = 1; i < argc; ++i ) {
-      basic_parse_arg_nothrow< example::first >( argv[ i ], i );
+      basic_parse_string_nothrow< example::first >( argv[ i ] );
    }
    return 0;
 }
 }}}
 
-The return value of `basic_parse_arg_nothrow()` indicates whether parsing was successful.
+The return value of `basic_parse_string_nothrow()` indicates whether parsing was successful.
 In the case of failure, diagnostic messages are printed to `std::cerr`.
-Alternatively the function `basic_parse_arg_throws()` could have been used; in the case of failure it throws an exception.
+Alternatively the function `basic_parse_string_throws()` could have been used; in the case of failure it throws an exception.
 
 ===State and Actions===
 
@@ -175,12 +174,11 @@ The first argument is a _rule_, the second argument is the _action_, which must 
 {{{
    struct my_action
    {
-      template< typename Rule >
-      static void matched( const std::string & token, ??? );
+      static void matched( const std::string & token, ... );
    };
 }}}
 
-where the first string argument contains the portion of the input that the rule attached to the action matched, and the actually used _state_ must be substituted for the `???`.
+where the first string argument contains the portion of the input that the rule attached to the action matched, and the actually used _state_ must be substituted for the `...`.
 
 For example, the included `calculator.cc` uses a `std::vector< int >` as stack for the evaluation of (arbitrarily nested) arithmetic expressions.
 Whenever the parser recognises (the string representation of) a number, it pushes the number onto the evaluation stack.
@@ -188,7 +186,7 @@ Whenever the parser recognises (the string representation of) a number, it pushe
 {{{
    struct push_action
    {
-      template< typename Rule, typename Stack >
+      template< typename Stack >
       static void matched( const std::string & m, Stack & s )
       {
          s.push_back( utility::string_to_signed< typename Stack::value_type >( m ) );
@@ -434,6 +432,11 @@ A better, equivalent, expression is the following.
 
 
 ===Changelog===
+
+*PEGTL version 0.15*
+
+  * Removed some small superfluous functions (less is more).
+  * Changed the "must" tracking from run-time to compile-time (better?).
 
 *PEGTL version 0.14*
 

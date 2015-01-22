@@ -20,7 +20,7 @@ namespace pegtl
 	 st.template update< any >( ".", true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 if ( in.eof() ) {
@@ -43,7 +43,7 @@ namespace pegtl
 	 st.template update< one >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 if ( in.eof() ) {
@@ -70,7 +70,7 @@ namespace pegtl
 	 st.template update< not_one >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 if ( in.eof() ) {
@@ -115,7 +115,7 @@ namespace pegtl
 	 st.template update< list >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {      
 	 if ( in.eof() ) {
@@ -151,7 +151,7 @@ namespace pegtl
 	 st.template update< not_list >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {      
 	 if ( in.eof() ) {
@@ -182,7 +182,7 @@ namespace pegtl
 	 st.template update< range >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression range< C, D > where C is greater than D" );
@@ -206,7 +206,7 @@ namespace pegtl
 	 st.template update< not_range >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression not_range< C, D > where C is greater than D" );
@@ -237,7 +237,7 @@ namespace pegtl
       static void i_insert( std::ostream &, Print & )
       { }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool, typename Input, typename Debug, typename ... Class >
       static bool i_match( Input &, Debug &, Class && ... )
       {
 	 return true;
@@ -266,17 +266,17 @@ namespace pegtl
 	 st.template update< string >( n, true );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool Must, typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
 	 marker< Input > h( in );
-	 return h( i_match( in, de, std::forward< Class >( cl ) ... ) );
+	 return h( i_match< Must >( in, de, std::forward< Class >( cl ) ... ) );
       }
 
-      template< typename Input, typename Debug, typename ... Class >
+      template< bool Must, typename Input, typename Debug, typename ... Class >
       static bool i_match( Input & in, Debug & de, Class && ... cl )
       {
-	 return one< Char >::template s_match( in, de, std::forward< Class >( cl ) ... ) && pegtl::string< Chars ... >::template i_match( in, de, std::forward< Class >( cl ) ... );
+	 return one< Char >::template s_match< Must >( in, de, std::forward< Class >( cl ) ... ) && pegtl::string< Chars ... >::template i_match< Must >( in, de, std::forward< Class >( cl ) ... );
       }
    };
 

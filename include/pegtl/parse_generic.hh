@@ -23,7 +23,7 @@ namespace pegtl
    template< typename TopRule, typename Input, typename Debug, typename ... Class >
    bool parse_throws( Input & in, Debug & de, Class && ... cl )
    {
-      if ( ! de.template match< TopRule >( true, in, std::forward< Class >( cl ) ... ) )
+      if ( ! de.template match< true, TopRule >( in, std::forward< Class >( cl ) ... ) )
       {
 	 // This is not particularly informative, however the only way to trigger this is when
 	 // the dummy_debug is used, in which case the user was interested in speed, not good
@@ -39,7 +39,7 @@ namespace pegtl
    {
       try
       {
-	 return de.template match< TopRule >( true, in, std::forward< Class >( cl ) ... );
+	 return de.template match< true, TopRule >( in, std::forward< Class >( cl ) ... );
       }
       catch ( std::exception & e )
       {

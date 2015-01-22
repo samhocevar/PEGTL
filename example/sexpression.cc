@@ -91,7 +91,7 @@ namespace sexpression
 	 st.template insert< Head, Tail >();
       }
 
-      template< typename Input, typename Debug >
+      template< bool Must, typename Input, typename Debug >
       static bool s_match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
       {
 	 marker< Input > p( in );
@@ -99,10 +99,10 @@ namespace sexpression
 	 std::shared_ptr< node_base > car;
 	 std::shared_ptr< node_base > cdr;
 
-	 if ( ! de.template match< Head >( in, car ) ) {
+	 if ( ! de.template match< Must, Head >( in, car ) ) {
 	    return p( false );
 	 }
-	 if ( ! de.template match< Tail >( in, cdr ) ) {
+	 if ( ! de.template match< Must, Tail >( in, cdr ) ) {
 	    return p( false );
 	 }
 	 result = std::make_shared< cons_node >( car, cdr );

@@ -35,7 +35,7 @@ Still in the middle of a series of enhancements and additions on the road to 1.0
   * Some generic actions, like sub-expression capturing.
   * Some trivial automatic optimisations, to be extended.
   * Diagnostics with (nearly-)pretty-printing of grammar rules.
-  * Examples, including PEGTL grammar for [http://www.r6rs.org/ R6RS] Scheme syntax.
+  * Examples that show how to use the features of the library.
 
 ===Requirements===
 
@@ -75,12 +75,12 @@ The advantages of the PEG approach over CFGs are the greater expressive power, t
 Although superficially very similar, converting a CFG to a PEG, or vice versa, usually requires some *real work*.
 Simply interpreting a CFG as a PEG, or vice versa, will usually yield a grammar that recognises a *different language*.
 
-The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time polymorphism, i.e. interface classes and virtual functions) where grammars are created by instantiation of class templates.
-Until an appropriate extension is written, it might therefore not be well suited to applications that need to create and/or change grammars at run-time.
+The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time polymorphism, i.e. interface classes and virtual functions), where grammars are created by instantiation of class templates.
+Until an appropriate extension is written, it might not be well suited to applications that need to create and/or change grammars at run-time.
 
 The PEGTL currently only has explicit support for ASCII data.
-Support for parsing UTF-8 and raw binary data will likely be included in the future.
-Other character sets and encodings will probably never be supported.
+Limited UTF-8 compatibility is however possible, see the *Unicode Example* below.
+Support for explicit UTF-8 matching and validation, and handling of raw binary data will likely be included in the future.
 
 
 =Concepts=
@@ -229,6 +229,8 @@ namespace example
 
 int main( int argc, char ** argv )
 {
+   int result = 0;
+
    // Parse all command-line arguments with the grammar.
 
    for ( int i = 1; i < argc; ++i ) {
@@ -238,9 +240,15 @@ int main( int argc, char ** argv )
       // - reports success or failure in its return value,
       // and is therefore named basic_parse_string_nothrow().
 
-      pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
+      const bool success = pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
+
+      // The return value indicates whether the input matched the grammar.
+      // Here we accumulate the number of failures in the return value of
+      // the program.
+
+      result += ! success;
    }
-   return 0;
+   return result;
 }
 }}}
 
@@ -360,6 +368,62 @@ See `example/calculator.cc` for how `op_action` is embedded into the grammar.
 
 Note that the grammar follows the canonical paggern of recursive-descent parsers for arithmetic expressions with correct operator precedence.
 
+===Unicode Example===
+
+An example that shows how current PEGTL can be used with UTF-8 input as long as no explicit matching of non-ascii characters is required.
+It also shows how to write a _rule_ that matches C-style string literals.
+
+{{{
+namespace example
+{
+   using namespace pegtl;
+
+   // This example defines a rule for quoted strings with C-style backslash-escapes
+   // that is compatible with UTF-8 input, i.e. the quoted string can contain UTF-8
+   // without ever truncating a multi-byte character.
+
+   // The rule 'escaped' matches a backslash-escaped character; the use of ifmust<>
+   // ensures that every backlash is followed by one of the appropriate characters.
+
+   struct escaped
+	 : ifmust< one< '\\' >, one< '\\', '"', '\'', 'a', 'f', 'n', 'r', 't', 'v' > > {};
+
+   // A regular character is anything that is not an ASCII control character. This
+   // also matches any byte of a unicode character with multi-byte encoding in UTF-8.
+
+   struct regular
+	 : not_range< 0, 31 > {};
+
+   // This is simple, a character in the quoted string is either an escaped character
+   // or a regular character. Note that the order of the two rules is important; with
+   // sor< regular, escaped >, a backslash would always match rule 'regular', and rule
+   // 'escaped' would never fire, so backslash would loose its special meaning.
+
+   struct character
+	 : sor< escaped, regular > {};
+
+   // A quoted string starts with a quote, and then contains characters until another
+   // quote is encountered. Escaped quotes can be embedded, they will be matched by
+   // rule 'escaped'. A seq<> could be used instead of the ifmust<>, however usually
+   // a grammar will have only one rule that will match a string starting with a quote,
+   // and in this case the ifmust<> will produce a better error message (because an
+   // input that starts with a quote, but does not contain the corresponding closing
+   // quote, will produce an error in rule 'quoted', rather than wherever any sor<>
+   // backtracking in the grammar might lead to).
+
+   struct quoted
+	 : ifmust< one< '"' >, until< one< '"' >, character > > {};
+
+   // Note that rule 'quoted' will work fine with UTF-8 in the sense that the quoted
+   // string can contain any UTF-8 character, however no validation of multi-byte
+   // encoded characters is performed. Support for UTF-8 will likely be extended
+   // in the future....
+
+} // example
+}}}
+
+See also `example/unicode.cc` for the source code.
+
 ===Capture Example===
 
 An example of how to use class `capture`, which is both a _rule_ and an _action_, from `example/capture.cc`.
@@ -429,24 +493,26 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 || `e`        || `success`               || Success. ||
 || `!e`       || `failure`               || Local failure. ||
 ||            || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
-|| `&C`       || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
-|| `!C`       || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
-|| `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< R, success >`; variadic in `R`. ||
-|| `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R > >`; variadic in `R`. ||
-|| `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R > >`; variadic in `R`. ||
 || `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails; variadic in `R`. ||
-|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic with choice semantics. ||
+|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic with *or*-semantics. ||
+|| `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< seq< R, ... >, success >`; variadic in `R`. ||
+|| `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R, ... > >`; variadic in `R`. ||
+|| `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R, ... > >`; variadic in `R`. ||
 || `$C`       || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
 || `C % R`    || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming); variadic in `R`. ||
-||            || `must< R, ... >`        || Equivalent to `R`, but converts local failure of `R` to global failure; variadic in `R`. ||
+||            || `must< R, ... >`        || Equivalent to `seq< R, ... >`, but converts local failure of `seq< R, ... >` to global failure; variadic in `R`. ||
 || `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< seq< R, ... > >`; variadic in `R`. ||
 || `C --> R`  || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once; variadic in `R`. ||
 ||            || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, seq< not_at< C >, must< T > > >`, but invokes `C` only once. ||
 ||            || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
 ||            || `list< R, S >`          || Equivalent to `seq< R, star< ifmust< S, R > >`, i.e. to parse non-empty lists of `R`s separated by `S`s. ||
-||            || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`, but only `T` appears in diagnostic messages. ||
-|| `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< R, ..., R >` with `n` repetitions of `R`; variadic in `R`. ||
-|| `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< R, ..., R, opt< R >, ..., opt< R >, not_at< R > >` with `n` repetitions of `R` and `m` repetitions of `opt< R >`; variadic in `R`. ||
+|| `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< seq< R, ... >, ..., seq< R, ... > >` with `n` repetitions of `seq< R, ... >`; variadic in `R`. ||
+|| `&C`       || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
+|| `!C`       || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
+|| `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< rep< n, R, ... >, rep< m-n, opt< R, ... > >, not_at< seq< R, ... > > >`; variadic in `R`. ||
+||            || `padl< T, L >`          || Equivalent to `seq< star< L >, T >`. ||
+||            || `padr< T, R >`          || Equivalent to `seq< T, star< R > >`. ||
+||            || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`. ||
 
 Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the letter epsilon.
 
@@ -460,12 +526,12 @@ If not documented otherwise, the semantics of these _rules_ `foo` is equivalent 
 
 || *Expression* || *String Rule* || *Description* ||
 || `.`       || `any` || Match any character. ||
-|| `"a"`     || `one< 'a' >` || Match given character (same as below). ||
-|| `[abc]`   || `one< 'a', 'b', 'c', ... >` || Match one of the given characters (variadic). ||
-|| `[^abc]`  || `not_one< 'a', 'b', 'c', ... >` || Match any of the characters not given (variadic). ||
+|| `"a"`     || `one< 'a' >` || Match given character; same as below. ||
+|| `[abc]`   || `one< 'a', 'b', 'c', ... >` || Match one of the given characters; variadic. ||
+|| `[^abc]`  || `not_one< 'a', 'b', 'c', ... >` || Match any of the characters not given; variadic. ||
 || `[a-z]`   || `range< 'a', 'z' >` || Match character in range. ||
 || `[^a-z]`  || `not_range< 'a', 'z' >` || Match character not in range. ||
-|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o', ... >` || Match given character sequence (variadic). ||
+|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o', ... >` || Match given character sequence; variadic. ||
 || `"\n"`    || `lf` || Match single line-feed. ||
 || `"\r"`    || `cr` || Match single carriage-return. ||
 || `"\r\n"`  || `crlf` || Combined carriage-return and line-feed. ||
@@ -591,6 +657,12 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 =Changelog=
 
+*PEGTL version 0.23*
+
+  * Added new rules `padl` and `padr` (convenience).
+  * Added example for quoted strings with arbitrary unicode characters (documentation).
+  * Changed rule `pad` to not suppress the padding in diagnostic messages (consistency).
+
 *PEGTL version 0.22*
 
   * Cleaned up the source to compile with `-std=c++0x -pedantic` (compliance).
@@ -650,7 +722,7 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
   * Fixed typo in name of `PEGTL_IMPURE_OPTIMISATIONS` macro (correctness).
   * Made the marker class a sub-class of the _input_ class (simplicity).
   * Renamed some of classes named `*white*`, `*space*`, or `*blank*` (consistency).
-  * Fixed some issues in the R6RS example (CFG to PEG mismatch, only first datum).
+  * Fixed some issues in the [http://www.r6rs.org/ R6RS] example (CFG to PEG mismatch, only first datum).
   * Added missing template arguments to `smart_parse_*` functions (correctness).
 
 *PEGTL version 0.15*

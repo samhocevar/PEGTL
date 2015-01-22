@@ -363,34 +363,11 @@ namespace pegtl
 
    template< typename Cond, typename Then, typename Else >
    struct ifmustelse
-	 : cond3impl< true, Cond, Then, Else >
-   {
-      //      typedef sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > > key_type;
-   };
+	 : cond3impl< true, Cond, Then, Else > {};
 
    template< typename Cond, typename Then, typename Else >
    struct ifthenelse
-	 : cond3impl< false, Cond, Then, Else >
-   {
-      //      typedef sor< seq< Cond, Then >, seq< not_at< Cond >, Else > > key_type;
-   };
-
-   template< typename What, typename RulePadL, typename RulePadR = RulePadL >
-   struct pad
-	 : seq< star< RulePadL >, What, star< RulePadR > >
-   {
-      template< typename Print >
-      static void prepare( Print & st )
-      {
-	 st.template insert< seq< star< RulePadL >, What, star< RulePadR > > >( true );
-	 const std::string e = st.template expr< What >();
-	 st.template update< pad >( e, ! st.template name< pad >().compare( 0, 11, "pegtl::pad<" ) );
-      }
-   };
-
-   template< typename Rule, typename Glue >
-   struct list
-	 : seq< Rule, star< ifmust< Glue, Rule > > > {};
+	 : cond3impl< false, Cond, Then, Else > {};
 
    template< unsigned N, unsigned M, typename ... Rules >
    struct rep2
@@ -423,6 +400,22 @@ namespace pegtl
 	 return p( not_at< seq< Rules ... > >::template match< Must >( in, de, std::forward< States >( st ) ... ) );
       }
    };
+
+   template< typename Rule, typename PadL, typename PadR = PadL >
+   struct pad
+	 : seq< star< PadL >, Rule, star< PadR > > {};
+
+   template< typename Rule, typename PadL >
+   struct padl
+	 : seq< star< PadL >, Rule > {};
+
+   template< typename Rule, typename PadR >
+   struct padr
+	 : seq< Rule, star< PadR > > {};
+
+   template< typename Rule, typename Glue >
+   struct list
+	 : seq< Rule, star< ifmust< Glue, Rule > > > {};
 
 } // pegtl
 

@@ -35,6 +35,8 @@ namespace example
 
 int main( int argc, char ** argv )
 {
+   int result = 0;
+
    // Parse all command-line arguments with the grammar.
 
    for ( int i = 1; i < argc; ++i ) {
@@ -44,7 +46,13 @@ int main( int argc, char ** argv )
       // - reports success or failure in its return value,
       // and is therefore named basic_parse_string_nothrow().
 
-      pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
+      const bool success = pegtl::basic_parse_string_nothrow< example::grammar >( argv[ i ] );
+
+      // The return value indicates whether the input matched the grammar.
+      // Here we accumulate the number of failures in the return value of
+      // the program.
+
+      result += ! success;
    }
-   return 0;
+   return result;
 }

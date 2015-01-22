@@ -45,10 +45,10 @@ namespace pegtl
    void smart_parse_string( const bool trace, const std::string & string, States && ... st )
    {
       try {
-	 dummy_parse_string( string, std::forward< States >( st ) ... );
+	 dummy_parse_string< TopRule >( string, std::forward< States >( st ) ... );
       }
       catch ( const parse_error & ) {
-	 trace_parse_string( trace, string, std::forward< States >( st ) ... );
+	 trace_parse_string< TopRule >( trace, string, std::forward< States >( st ) ... );
       }
    }
 

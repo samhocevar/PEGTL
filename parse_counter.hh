@@ -5,9 +5,8 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_COUNT_HH
-#define COHI_PEGTL_COUNT_HH
-
+#ifndef COHI_PEGTL_COUNTER_HH
+#define COHI_PEGTL_COUNTER_HH
 
 namespace pegtl
 {
@@ -52,10 +51,10 @@ namespace pegtl
       void enter()
       {
 	 if ( ++m_rule_counter > m_rule_maximum ) {
-	    UTILS_THROW( "pegtl: total number of parsing expression grammar rule applications exceeds limit " << m_rule_maximum );
+	    PEGTL_THROW( "pegtl: total number of parsing expression grammar rule applications exceeds limit " << m_rule_maximum );
 	 }
 	 if ( ++m_nest_counter > m_nest_maximum ) {
-	    UTILS_THROW( "pegtl: number of nested parsing expression grammar rule applications exceeds limit " << m_nest_maximum );
+	    PEGTL_THROW( "pegtl: number of nested parsing expression grammar rule applications exceeds limit " << m_nest_maximum );
 	 }
       }
 

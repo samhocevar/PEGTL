@@ -8,11 +8,10 @@
 #ifndef COHI_PEGTL_ASCII_HH
 #define COHI_PEGTL_ASCII_HH
 
-
 namespace pegtl
 {
    struct digit
-	 : one_range< '0', '9' >
+	 : range< '0', '9' >
    {
       template< typename Print >
       static void s_insert( Print & st )
@@ -21,9 +20,8 @@ namespace pegtl
       }
    };
 
-
    struct lower
-	 : one_range< 'a', 'z' >
+	 : range< 'a', 'z' >
    {
       template< typename Print >
       static void s_insert( Print & st )
@@ -32,9 +30,8 @@ namespace pegtl
       }      
    };
 
-
    struct upper
-	 : one_range< 'A', 'Z' >
+	 : range< 'A', 'Z' >
    {
       template< typename Print >
       static void s_insert( Print & st )
@@ -42,7 +39,6 @@ namespace pegtl
 	 st.template update< upper >( "upper", true );
       }      
    };
-
 
    struct alpha
 	 : sor< lower, upper >
@@ -54,6 +50,25 @@ namespace pegtl
       }
    };
 
+   struct alnum
+	 : sor< alpha, digit >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< alpha >( "alnum", true );
+      }
+   };
+
+   struct xdigit
+	 : sor< digit, range< 'a', 'f' >, range< 'A', 'F' > >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< alpha >( "xdigit", true );
+      }
+   };
 
    struct ident1
 	 : sor< one< '_' >, alpha > {};
@@ -61,7 +76,7 @@ namespace pegtl
    struct ident2
 	 : sor< digit, ident1 > {};
 
-   struct ident
+   struct identifier
 	 : seq< ident1, star< ident2 > > {};
 
    struct lf
@@ -76,9 +91,24 @@ namespace pegtl
    struct eol
 	 : sor< eof, crlf, lf, cr > {};
 
+   struct blank
+	 : list< ' ', '\t' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< blank >( "blank", true );
+      }
+   };
+
+   struct space_star
+	 : star< blank > {};
+
+   struct space_plus
+	 : plus< blank > {};
 
    struct space
-	 : one_list< ' ', '\t' >
+	 : list< ' ', '\n', '\r', '\t', '\v', '\f' >
    {
       template< typename Print >
       static void s_insert( Print & st )
@@ -87,40 +117,20 @@ namespace pegtl
       }
    };
 
-
-   struct space_star
+   struct white_star
 	 : star< space > {};
 
-
-   struct space_plus
-	 : plus< space > {};
-
-
-   struct white
-	 : one_list< ' ', '\n', '\r', '\t', '\v' >
-   {
-      template< typename Print >
-      static void s_insert( Print & st )
-      {
-	 st.template update< white >( "white", true );
-      }
-   };
-
-
-   struct white_star
-	 : star< white > {};
-
    struct white_plus
-	 : plus< white > {};
+	 : plus< space > {};
 
    struct until_eol
 	 : until1< eol > {};
 
    struct white_until_eof
-	 : until< white, eof > {};
+	 : until< space, eof > {};
 
    struct space_until_eol
-	 : until< space, eol > {};
+	 : until< blank, eol > {};
 
    struct shebang
 	 : ifmust< string< '#', '!' >, until_eol > {};

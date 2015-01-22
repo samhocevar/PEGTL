@@ -11,6 +11,30 @@
 
 namespace pegtl
 {
+   struct dummy_debug
+   {
+      bool must() const
+      {
+	 return true;  // Don't care, could also be false.
+      }
+
+      template< typename Rule >
+      void init()
+      { }
+
+      template< typename Rule, typename Input, typename... Class >
+      bool match( Input & in, Class && ... cl )
+      {
+	 return Rule::template s_match( in, *this, std::forward< Class >( cl ) ... );
+      }
+	 
+      template< typename Rule, typename Input, typename... Class >
+      bool match( const bool, Input & in, Class && ... cl )
+      {
+	 return Rule::template s_match( in, *this, std::forward< Class >( cl ) ... );
+      }
+   };
+
    template< typename Rule >
    struct basic_guard
    {
@@ -65,17 +89,16 @@ namespace pegtl
 	 const std::string rule = m_printer.template rule< Rule >();
 
 	 if ( ! rule.empty() ) {
-	    UTILS_PRINT( "pegtl: nesting #" << m_counter.nest() << " at " << m_where << " rule " << rule );
+	    PEGTL_PRINT( "pegtl: nesting #" << std::setw( 2 ) << m_counter.nest() << " at " << m_where << " rule " << rule );
 	 }
       }
    
       void throw_error()
       {
-	 UTILS_PRINT( "pegtl: syntax error at " << m_where );
-	 UTILS_THROW( "pegtl: parsing aborted at " << m_where );
+	 PEGTL_PRINT( "pegtl: syntax error at " << m_where );
+	 PEGTL_THROW( "pegtl: parsing aborted at " << m_where );
       }
    };
-
 
    struct basic_debug
    {
@@ -108,7 +131,6 @@ namespace pegtl
       counter m_counter;
       printer m_printer;
    };
-
 
    template< typename Rule, typename Input >
    struct trace_guard : private basic_guard< Rule >
@@ -157,17 +179,16 @@ namespace pegtl
 	 const typename Input::iterator end = m_input.here();
 
 	 for ( typename Input::iterator run = m_begin; run != end; ++run ) {
-	    utils::escape_impl( nrv, * run );
+	    escape_impl( nrv, * run );
 	 }
 	 return nrv;
       }
 
       void print_debug( const char * msg )
       {
-	 UTILS_PRINT( "pegtl: " << msg << " flags " << this->m_must_old << this->m_counter.must() << this->m_result << " rule " << std::setw( 4 ) << m_rule_counter << " nest " << std::setw( 3 ) << this->m_counter.nest() << " at " << m_input.where() << " expression " << this->m_printer.template rule< Rule >() << " input \"" << read_debug() << "\"" );
+	 PEGTL_PRINT( "pegtl: " << msg << " flags " << this->m_must_old << this->m_counter.must() << this->m_result << " rule " << std::setw( 4 ) << m_rule_counter << " nest " << std::setw( 3 ) << this->m_counter.nest() << " at " << m_input.where() << " expression " << this->m_printer.template rule< Rule >() << " input \"" << read_debug() << "\"" );
       }
    };
-
 
    struct trace_debug : public basic_debug
    {

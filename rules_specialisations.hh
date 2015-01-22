@@ -5,9 +5,8 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_SPECIAL_HH
-#define COHI_PEGTL_SPECIAL_HH
-
+#ifndef COHI_PEGTL_SPECIALISATIONS_HH
+#define COHI_PEGTL_SPECIALISATIONS_HH
 
 namespace pegtl
 {
@@ -145,19 +144,19 @@ namespace pegtl
 
    template< typename Rule >
    struct star< opt< Rule > >
-   { static_assert( !sizeof( Rule ), "illegal expression Rule?* (allows iteration without progress = infinite loop)" ); };
+   { static_assert( !sizeof( Rule ), "pegtl: illegal expression Rule?* (allows iteration without progress = infinite loop)" ); };
 
    template< typename Rule >
    struct plus< opt< Rule > >
-   { static_assert( !sizeof( Rule ), "illegal expression Rule?+ (allows iteration without progress = infinite loop)" ); };
+   { static_assert( !sizeof( Rule ), "pegtl: illegal expression Rule?+ (allows iteration without progress = infinite loop)" ); };
 
    template< typename Rule >
    struct star< star< Rule > >
-   { static_assert( !sizeof( Rule ), "illegal expression Rule** (allows iteration without progress = infinite loop)" ); };
+   { static_assert( !sizeof( Rule ), "pegtl: illegal expression Rule** (allows iteration without progress = infinite loop)" ); };
 
    template< typename Rule >
    struct plus< star< Rule > >
-   { static_assert( !sizeof( Rule ), "illegal expression Rule*+ (allows iteration without progress = infinite loop)" ); };
+   { static_assert( !sizeof( Rule ), "pegtl: illegal expression Rule*+ (allows iteration without progress = infinite loop)" ); };
 
 } // pegtl
 

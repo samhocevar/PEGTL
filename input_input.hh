@@ -11,6 +11,8 @@
 
 namespace pegtl
 {
+   // Helper class to keep track of line and column numbers in a file.
+
    class where
    {
    public:
@@ -39,28 +41,77 @@ namespace pegtl
       size_t m_column;
    };
 
-
    inline std::ostream & operator<< ( std::ostream & o, const where & w )
    {
       w.write_to( o );
       return o;
    }
 
+   // Helper class to prevent leaking file descriptors.
+
+   struct file_impl
+   {
+      explicit
+      file_impl( const std::string & filename )
+	    : m_fd( ::open( filename.c_str(), O_RDONLY ) ),
+	      m_fn( filename )
+      {
+	 if ( m_fd < 0 ) {
+	    PEGTL_THROW( "pegtl: unable to open() file " << m_fn << " for reading errno " << errno );
+	 }
+      }
+
+      ~file_impl()
+      {
+	 if ( m_fd > -1 ) {
+	    ::close( m_fd );
+	 }
+      }
+
+      std::string read()
+      {
+	 errno = 0;
+	 struct stat st;
+
+	 if ( ::fstat( m_fd, & st ) < 0 ) {
+	    PEGTL_THROW( "pegtl: unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	 }
+	 std::string nrv( size_t( st.st_size ), '\0' );
+
+	 if ( ::read( m_fd, const_cast< char * >( nrv.data() ), nrv.size() ) != int( nrv.size() ) ) {
+	    PEGTL_THROW( "pegtl: unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	 }
+	 return nrv;
+      }
+
+   private:
+      const int m_fd;
+      const std::string m_fn;
+   };
+
+   // Convenience function to read a file in one go.
+
+   inline std::string read_file( const std::string & filename )
+   {
+      return file_impl( filename ).read();
+   }
+
+   // Input abstraction for the PEGTL with several constructors...
 
    class input
    {
    public:
       explicit
       input( const std::string & filename )
-	    : m_string( utils::read_file( filename ) ),
-	      m_debug( "file '" + filename + "'" ),
+	    : m_string( read_file( filename ) ),
+	      m_debug( "file " + filename ),
 	      m_run( m_string ),
 	      m_end( m_string.end() )
       { }
 
-      input( const std::string & string, const int )
+      input( const std::string & string, const int arg )
 	    : m_string( string ),
-	      m_debug( "command line argument" ),
+	      m_debug( "command line argument " + to_string( arg ) ),
 	      m_run( m_string ),
 	      m_end( m_string.end() )
       { }
@@ -134,7 +185,7 @@ namespace pegtl
 
       bool eof() const
       {
-	 return m_run.get() == m_end;
+	 return m_run.get() >= m_end;
       }
 
       iterator here() const
@@ -147,11 +198,12 @@ namespace pegtl
 	 return m_run.where();
       }
 
-      void test() const
+      bool test() const
       {
 	 if ( eof() ) {
-	    UTILS_THROW( "input exhausted error" );
+	    PEGTL_THROW( "pegtl: attempt to read beyond end of input" );
 	 }
+	 return true;
       }
 
       void bump()
@@ -183,6 +235,9 @@ namespace pegtl
       const std::string::const_iterator m_end;
    };
 
+   // Helper class for the implementation of rules:
+   // destructor rewinds to initial position in input when operator()
+   // was not called with 'true' before.
 
    template< typename Input >
    class position
@@ -221,6 +276,8 @@ namespace pegtl
       const iterator m_iterator;
    };
 
+   // Helper class for the implementation of rules that read a character:
+   // only actually consumes the input when operator() is called with 'true'.
 
    template< typename Input >
    struct character
@@ -228,12 +285,12 @@ namespace pegtl
    public:
       explicit character( Input & in )
 	    : m_input( in ),
-	      m_iterator( in.here() )
+	      m_value( in.test() ? ( * in.here() ) : 0xf1234567 )
       { }
 
       operator int () const
       {
-	 return * m_iterator;
+	 return m_value;
       }
       
       bool operator() ( const bool success ) const
@@ -246,7 +303,7 @@ namespace pegtl
 
    private:
       Input & m_input;
-      const typename Input::iterator m_iterator;
+      const int m_value;
    };
 
 } // pegtl

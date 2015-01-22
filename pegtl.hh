@@ -21,22 +21,24 @@
 #include <functional>
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-#include <utils.hh>
+#include <pegtl_utility.hh>
 
-#include <pegtl_input.hh>
+#include <input_input.hh>
 
-#include <pegtl_count.hh>
-#include <pegtl_print.hh>
-#include <pegtl_debug.hh>
+#include <parse_counter.hh>
+#include <parse_printer.hh>
+#include <parse_debug.hh>
+#include <parse_parser.hh>
 
-#include <pegtl_parse.hh>
-
-#include <pegtl_rules.hh>
-#include <pegtl_value.hh>
-#include <pegtl_ascii.hh>
-#include <pegtl_utils.hh>
-
-#include <pegtl_special.hh>
+#include <rules_combinators.hh>
+#include <rules_atomics.hh>
+#include <rules_ascii.hh>
+#include <rules_specialisations.hh>
 
 #endif

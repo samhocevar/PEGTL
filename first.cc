@@ -5,18 +5,19 @@
 
 // The first example from the documentation.
 
-namespace
+namespace example
 {
    using namespace pegtl;
 
    struct first
-	 : seq< alpha, star< sor< alpha, digit > > > {};
-}
+	 : seq< alpha, until< sor< alpha, digit >, eol > > {};
+
+} // example
 
 int main( int argc, char ** argv )
 {
    for ( int i = 1; i < argc; ++i ) {
-      pegtl::parse< first >( argv[ i ], "command line argument" );
+      pegtl::parse< example::first >( argv[ i ], "command line argument" );
    }
    return 0;
 }

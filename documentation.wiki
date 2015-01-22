@@ -7,7 +7,7 @@
 
 =Introduction=
 
-The Parsing Expression Grammar Template Library" (PEGTL) is a C++ library for creating parsers according to a Parsing Expression Grammar (PEG).
+The Parsing Expression Grammar Template Library (PEGTL) is a C++ library for creating parsers according to a Parsing Expression Grammar (PEG).
 Grammars are embedded as regular C++ code, and consist of hierarchies of (templated) classes.
 These class hierarchies naturally correspond to the inductive definitions of PEGs.
 The library extends on the subject of PEGs with new expression types, and mechanisms to ensure helpful diagnostics in case of parsing errors.
@@ -16,36 +16,33 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 ===Status===
 
-The actual parsing rules are ready, however the input abstraction needs to be cleaned up, testcases need to be written, the included examples need to be extended, and this documentation completed.
+*Features*
 
-===Features===
-
-*Advantages*
-
-  * Extended set of PEG expressions.
+  * Comprehensive set of parsing rules.
   * Produces very efficient parsers.
   * Customisable input abstraction.
-  * Customisation point for debugging.
-  * Supports arbitrary user-defined parser state.
-  * Expressions expressed in straight C++ code.
-  * (Detects some invalid grammars at compile-time.)
-  * (Optimises some redundancies in the grammar at compile-time.)
-  * Produces human-readable (nearly-)pretty-printing of grammar rules.
-  * More flexibility and better diagnostics thanks to variadic templates.
+  * Arbitrary user-defined parser state.
+  * User-defined input abstraction, supplied:
+    # files,
+    # strings,
+    # command line arguments,
+    # iterator ranges.
+  * User-defined debug abstraction, supplied:
+    # no diagnostics,
+    # diagnostics on error,
+    # on error plus complete trace of all rule invocations.
+  * Expressions/rules and actions embedded in simple C++ code.
+  * Detects some invalid grammars at compile-time.
+  * Optimises some redundancies in the grammar at compile-time.
+  * Diagnostics with (nearly-)pretty-printing of grammar rules.
+  * In general "better" thanks to using some C++0x features.
+  * Example programs that show many of the PEGTL features.
 
-*Disadvantages*
- 
-  * Left-recursive rules may not be used.
+*Compared to Context-Free Grammars*
 
-(This is an inherent limitation of the PEG formalism.)
-
-*Compared to Context Free Grammars*
-
-  * No ambiguities.
   * Strictly greater expressive power.
-  * No separate tokenisation required for parsers.
-
-(Tokenisation can be subsumed by the actual parser.)
+  * Strictly deterministic, no ambiguities.
+  * Tokeniser subsumed by parser, no separate step required.
 
 ===Audience===
 
@@ -53,6 +50,10 @@ The PEGs should be easy to learn and apply by anyone experienced with formal lan
 The PEGTL can be used to effectively create efficient and powerful parsers in C++0x.
 
 ===Limitations===
+
+The PEGTL inherits the general limitation of PEGs of not being able to use left-recursive rules.
+More generally, any recursion/iteration that can recurse/iterate without making progress, i.e. without consuming any input, must be avoided.
+With a little exercise it is however rather easy to recognise, and rewrite, grammars that exhibit this problem.
 
 The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time polymorphism, i.e. interface classes and virtual functions) where grammars are created mainly by instantiating appropriate class templates.
 It might therefore not be well suited for applications that create and/or change grammars at run-time.
@@ -69,8 +70,9 @@ Support for very large inputs might be included in the future.
 
 ===Requirements===
 
-The PEGTL uses feaatures from C++0x and requires GCC 4.3.0, or later, to compile.
-Only headers and libraries from C99, C++98, TR1, and/or C++0x are used.
+The PEGTL uses features from C++0x and requires GCC 4.3.0, or later, to compile.
+It was developed under Mac OS X, but should work on any Linux or Unix system.
+Only headers and libraries defined in the C99, C++0x, and SUSv3 standards are used.
 
 ===Installation===
 
@@ -78,10 +80,10 @@ The latest PEGTL distribution is available from the [http://code.google.com/p/pe
 PEGTL is a header-only library that neither requires any compilation during installation, nor creates any library for applications to link against.
 To install, all header files must be copied to your projects' directory of include files, a dedicated directory like `/usr/local/pegtl/`, or any other location that is appropriate.
 
-For projects using the PEGTL, it must be ensured that a suitable compiles is used, and that the directory with the PEGTL header files is in the include search path.
-For recommended compiler switches see the file `compile.sh` included in the PEGTL distribution archive; if a project using the PEGTL compiles, it can be reasonably assumed to function correctly.
+For projects using the PEGTL, it must be ensured that a suitable compiler is used, and that the directory with the PEGTL header files is in the include search path.
+For recommended compiler switches see the `Makefile` included in the PEGTL distribution archive; if a project using the PEGTL compiles, it can be reasonably assumed to function correctly.
 
-(It is highly recommended to change the relevant compiler switches in `compile.sh` to whatever is used in your projects, and then invoke it to build the examples and run all unit tests included with the library.)
+It is highly recommended to check the `Makefile`, and to change the compiler flags to whatever is used in your projects before invoking `make test` to run all unit tests.
 
 
 =Tutorial=
@@ -107,19 +109,22 @@ Further on, the _rules_ of a grammar will be extended by _state_ and _actions_ i
 For example, consider the _rule_ `first` as provided in `first.cc`.
 
 {{{
-using namespace pegtl;
+namespace example
+{
+   using namespace pegtl;
 
-struct first
-      : seq< alpha, star< sor< alpha, digit > > > {};
+   struct first
+         : seq< alpha, until< sor< alpha, digit >, eol > > {};
+}
 }}}
 
 The rules `alpha` and `digit` are provided and accept a single ASCII letter, or digit, respectively.
-The `seq` template concatenates expressions, `sor` is the ordered choice, and `star` the usual repetition.
+The `seq` template concatenates expressions, `sor` is the ordered choice, and `until` requires the first rule, `sor< alpha, digit >`, to match until `eol`, end-of-line or end-of-file, is reached.
 The _rule_ can be read as "an alpha, followed by zero-or-more characters that can be either alphas or digits", i.e. the regular expression "[a-zA-Z][a-zA-Z0-9]*".
 
-Note that the rule `first` could also be defined as a `typedef`, rather than a `struct`, i.e. as `typedef seq< alpha, star< sor< alpha, digit > > > first;`.
-For the resulting grammar there is no difference whether a `typedef` or a `struct` is used to define new rules.
-However it is recommended to _not_ use `typedef` so that the `struct`'s name can help understanding the grammar rules when included in diagnostic messages.
+Note that the rule `first` could also be defined as a `typedef`, rather than a `struct`, i.e. as `typedef seq< alpha, until< sor< alpha, digit >, eol > > first;`.
+For the resulting grammar there is no difference whether a `typedef` or a `struct` is used.
+However it is recommended to _not_ use `typedef` because the PEGTL uses the name of the `struct` in diagnostic messages, which can enhance readability.
 
 ===Actual Parsing===
 
@@ -142,13 +147,13 @@ The first string is the input to the _parser_, the second string is used for dia
 This might be a filename, a socket address, etc., or a command line argument as in the example below.
 
 {{{
-   int main( int argc, char ** argv )
-   {
-      for ( int i = 1; i < argc; ++i ) {
-         parse< first >( argv[ i ], "command line argument" );
-      }
-      return 0;
+int main( int argc, char ** argv )
+{
+   for ( int i = 1; i < argc; ++i ) {
+      parse< example::first >( argv[ i ], "command line argument" );
    }
+   return 0;
+}
 }}}
 
 The `parse` function internally creates an instance of class `pegtl::input` and, by default, uses a `basic_debug` in order to provide "sensible" error messages.
@@ -177,169 +182,164 @@ There are two typical use cases for _actions_.
 Either they perform a specific final task while parsing, like in the included `calculator.cc` where the expressions are evaluted by the parser "on the fly" using _actions_.
 Or _actions_ can be used to generate an intermediate representation, usually some kind of abstract syntax tree (AST), that is further processed separately, after the parser has finished its job.
 
-The included file `sexpression.cc` is an example for the second type; although no actual further processing beyond dumping the created tree structure takes place.
+An _action_ is attached to a rule by using the `action` class template that takes two template arguments.
+The first argument is a _rule_, the second argument is the _action_, which must be a class providing a static `matched` function declared as follows
 
+{{{
+   struct my_action
+   {
+      template< typename Rule >
+      static void matched( const std::string & token, ??? );
+   };
+}}}
+
+where the first string argument contains the portion of the input that the rule attached to the action matched, and the actually used _state_ must be substituted for the `???`.
+
+For example the included `calculator.cc` uses a `std::vector< int >` as stack for the evaluation of (arbitrarily nested) arithmetic expressions.
+Whenever the parser recognises (the string representation of) a number, it pushes the number onto the evaluation stack.
+
+{{{
+   struct push_action
+   {
+      template< typename Rule, typename Stack >
+      static void matched( const std::string & m, Stack & s )
+      {
+         s.push_back( utility::string_to_signed< typename Stack::value_type >( m ) );
+      }
+   };
+
+   struct read_number
+         : seq< opt< list< '+', '-' > >, plus< digit > > {};
+
+   struct push_number
+         : pad< action< read_number, push_action >, space > {};
+}}}
+
+Struct `push_action` is the user-defined action that converts the given string to an integer, and pushes it onto the supplied stack.
+Struct `read_number` is a normal _rule_ that recognises decimal numbers with optional sign.
+Struct `push_number` contains `action< read_number, push_action >`, which invokes `push_action::matched` every time that `read_number` matched.
+
+The included file `sexpression.cc` shows some further examples.
+
+===Error Messages===
+
+When an error occurs during parsing, i.e. the parser fails for the given input, a parser using the `basic_debug` or `trace_debug` classes as _debug_ will print a backtrace of which rules it was attempting to match at which positions.
+Here is the output from the first example program invoked with the -- illegal, since it recognises the regex `[a-zA-Z][a-zA-Z0-9]*` -- input `abc%`.
+
+{{{
+  > ./first "abc%"
+  pegtl: syntax error at line=1 column=4
+  pegtl: nesting # 4 at line=1 column=4 rule digit
+  pegtl: nesting # 3 at line=1 column=4 rule ( alpha / digit )
+  pegtl: nesting # 2 at line=1 column=2 rule ( ( alpha / digit ) % pegtl::eol )
+  pegtl: nesting # 1 at line=1 column=1 rule example::first === ( alpha ( ( alpha / digit ) % pegtl::eol ) )
+  pegtl: parsing input from command line argument aborted
+  pegtl: parsing aborted at line=1 column=4
+}}}
+
+The first line indicates that there was a syntax error, and where the error occurred.
+The next line shows the innermost rule that the parser was attempting to match, i.e. the rule where the error was detected, here `digit`.
+The following lines show every step of the inductive definition up to the top-level rule, which in this case is `example::first`.
+The final two lines show where the error occurred, including where the input came from in the first place, which can be a filename, or, like here, a command line argument.
+
+Rules in error messages are printed in one of two distinct formats, which can be either only the actual expression like `digit`, or `( ( alpha / digit ) % pegtl::eol )`.
+Or, the name of the rule class is printed first, followed by `===`, and the actual expression.
+The PEGTL automatically collects the name of a rule when the rule was defined as a `struct`, rather than a `typedef`.
+Normal rule names include their namespace.
+
+There is also a mechanism that can be used to manually set the name of a rule to an arbitrary value.
+This mechanism is used with the PEGTL to give rules like `digit` or `eol` their short names, and is documented in the "Advanced" section below.
+
+=Expressions=
+
+This table shows the principal PEGTL expressions, and their symbolic representation.
+The simple rules should be self explaining, the combinators are explained in greater detail below.
+
+|| *Expression* || *Atomic Rule* || *Description* ||
+|| || `eof` || Matches end-of-file. ||
+|| || `failure` || Always fails. ||
+|| || `success` || Always succeeds. ||
+|| `.` || `any` || Match any character. ||
+|| `"a"` || `one< 'a' >` || Match character. ||
+|| `[^a]` || `not_one< 'a' >` || Match any other character. ||
+|| `[az]` || `list< 'a', 'z' >` || Match character in list. ||
+|| `[^az]` || `not_list< 'a', 'z' >` || Match character not in list. ||
+|| `[a-z]` || `range< 'a', 'z' >` || Match character in range. ||
+|| `[^a-z]` || `not_range< 'a', 'z' >` || Match character not in range. ||
+|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o' >` || Match character sequence. ||
+|| *Expression* || *Combinator Rule* || *Description* ||
+|| `R?` || `opt< R >` || "Optional" ||
+|| `R*` || `star< R >` || "Repeat zero-or-more" ||
+|| `R+` || `plus< R >` || "Repeat one-or-more" ||
+|| `C@` || `until< C >` || PEGTL convenience extension. ||
+|| `&C` || `at< C >` || "And-predicate" ||
+|| `!C` || `not_at< C >` || "Not-predicate" ||
+|| `R T` || `seq< R, T >` || Sequence, or concatenation (variadic). ||
+|| `R / T` || `sor< R, T >` || Ordered choice, or sequenced-or (variadic). ||
+|| `R % C` || `until< R, C >` || PEGTL convenience extension. ||
+|| `R{n}` || `rep< R, n >` || Repeat exactly `n` times" ||
+|| `C --> R` || `ifthen< C, R >` || PEGTL convenience extension. ||
+|| `C ->> R` || `ifmust< C, R >` || PEGTL convenience extension. ||
+|| || `ifthenelse< C, R, T >` || PEGTL convenience extension. ||
+|| || `ifmustelse< C, R, T >` || PEGTL convenience extension. ||
+|| || `pad< T, L, R = L >` || PEGTL convenience extension. ||
+|| || `action< T, F >` || PEGTL way of attaching behaviour to a parsing rule. ||
+|| *Expression* || *ASCII Rule* || *Description* ||
+|| `"\n` || `lf` || Single line-feed. ||
+|| `"\r"` || `cr` || Single carriage-return. ||
+|| `"\r\n"` || `crlf` || Combined carriage-return and line-feed. ||
+|| `$` || `eol` || Match any end-of-line, including end-of-file. ||
+|| `[[:blank:]]` || `blank` || Match space or tab. ||
+|| `[[:space:]]` || `space` || Match any white-space. ||
+|| `[[:digit:]]` || `digit` || Match any decimal digit. ||
+|| `[[:lower:]]` || `lower` || Match any lower-case letter. ||
+|| `[[:upper:]]` || `upper` || Match any upper-case letter. ||
+|| `[[:alpha:]]` || `alpha` || Match any upper- or lower-case letter. ||
+|| `[[:alnum:]]` || `alnum` || Match any upper- or lower-case letter or digit. ||
+|| `[[:xdigit:]]` || `xdigit` || Match any hexadecimal digit, upper- or lower-case. ||
+|| || `identifier` || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
+
+Note that the Posix syntax for extended regular expressions is used for the character classes in square brackets.
 
 =Combinators=
 
+Combinators, or operators, are rules that build new expressions from their argument expressions.
+
 ===opt< Rule >===
 
-The `opt` template corresponds to the "optional expression", or the "?"-operator.
-
-  * Always succeeds.
-  * Consumes as much input as `Rule` consumes.
+The `opt` template makes `Rule` optional, and therefore always succeeds.
 
 ===star< Rule >===
 
-The `star` template corresponds to the "zero-or-more repetition expression", the Kleene-star, or the "*"-operator.
-
-  * Always succeeds.
+The `star` template repeatedly invokes `Rule` until it fails; the `star` itself always succeeds.
 
 ===plus< Rule >===
 
-The `plus` template corresponds to the "one-or-more repetition expression", or the "+"-operator.
-
-  * Succeeds iff `Rule` succeeds.
+Semantically equivalent to `seq< Rule, star< Rule > >`.
 
 ===sor< Rule, ... >===
 
-The `sor` variadic template corresponds to the "choice expression", or the "/"-operator.
+The `sor` variadic template can be instantiated with arbitrary many template parameters, including 0 or 1.
+It invokes its arguments in order until the first one succeeds, in which case it succeeds itself, or fails if none of the arguments succeed.
 
-  * Succeeds iff at least one of the given rules succeed.
-  * The rules are all invoked at the same input position.
-  * Consumes exactly the input that the first successful rule consumes.
+This is very much _unlike_ context-free grammars, where the choice combinator is non-deterministic.
 
 ===seq< Rule, ... >===
 
-The `seq` variadic template corresponds to the "sequence expression", which is written by concatenation of expressions separated by a space, and therefore does not have a symbol.
-
-  * Succeeds iff all of the given rules succeed.
-  * The rules are invoked in sequence, each rule continuing at the first input position not handled by the previous rule (or eof).
+The `seq` variadic template can be instantiated with arbitrary many template parameters, including 0 or 1.
+It invokes its arguments in order until the first one fails, in which case it fails itself, or succeeds if all of the arguments succeed.
 
 ===at< Rule >===
 
-The `at` template corresponds to the positive "syntactic predicate", or the "&"-operator.
-
-  * Succeeds iff `Rule` succeeds.
-  * Does not consume any input.
+The `at` template invokes `Rule` and returns its return value, but rewinds the input, i.e. `at` never consumes any input.
 
 ===not_at< Rule >===
 
-The `not_at` template corresponds to the negative "syntactic predicate", or the "!"-operator.
-
-  * Succeeds iff `Rule` does not succeed.
-  * Does not consume any input.
+The `not_at` template invokes `Rule` and returns the negative of its return value, and rewinds the input, i.e. `not_at` never consumes any input.
 
 ===must< Rule >===
 
-The `must` template invokes `Rule`, but transforms a failure of `Rule` into an exception.
-
-  * Either succeeds or throws an exception.
-  * Consumes as much input as `Rule` consumes.
-
-
-=Atomic Rules=
-
-This list might be incomplete; see the PEGTL source for all provided rules.
-
-===eof===
-
-  * Succeeds iff all the input has been consumed.
-  * Does not consume any input.
-
-===any===
-
-Read any single character from the input.
-
-  * Succeeds iff not all of the input has been consumed.
-  * Consumes one character.
-
-===success===
-
-  * Always succeeds.
-  * Does not consume any input.
-
-===failure===
-
-  * Always fails (but does not itself throw an exception).
-  * Does not consume any input.
-
-===one< Char >===
-
-Read one given character from the input.
-
-  * Succeeds iff next input character is equal to `Char`.
-  * Consumes one character.
-
-===string< Char, ... >===
-
-Read a string from the input.
-
-Semantically equivalent to `seq< one< Char >, ... >`.
-
-This rule is a variadic template.
-
-===not_one< Char >===
-
-  * Succeeds iff next input character is not equal to `Char`.
-  * Consumes one character.
-
-===one_list< Char, ... >===
-
-Read one character from a given list from the input.
-
-  * Succeeds iff next input character is equal to one of the template arguments.
-  * Consumes one character.
-
-This rule is a variadic template.
-
-===one_range< Char1, Char2 >===
-
-Read one character from a given range from the input.
-
-  * Succeeds iff next input character is in the closed range `[Char1, Char2]`.
-  * Consumes one character.
-
-
-=Convenience Rules=
-
-This list might be incomplete; see the PEGTL source for all provided rules.
-
-===eol===
-
-Accepts one line-feed character.
-
-===eol_or_eof===
-
-Equivalent to `sor< eof, eol >`.
-
-===space===
-
-Accepts one space or tab character.
-
-===white===
-
-Accepts one space, vertical or horizontal tab, line-feed or carriage-return.
-
-===digit===
-
-Accepts regular expression `[0-9]`.
-
-===lower===
-
-Accepts regular expression `[a-z]`.
-
-===upper===
-
-Accepts regular expression `[A-Z]`.
-
-===alpha===
-
-Accepts regular expression `[a-zA-Z]`.
-
-===ident===
-
-Accepts regular expression `[a-zA-Z_][a-zA-Z0-9_]*`.
+The `must` template invokes `Rule` and stops the parser when `Rule` fails, even when in an optional context, e.g. `opt< must< Rule > >` or `star< must< Rule > >` both stop the parser when `Rule` fails.
 
 ===until1< Cond >===
 
@@ -348,6 +348,10 @@ Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< any, Rule
 ===until< What, Cond >===
 
 Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< What, Rule > >`, but implemented without recursion.
+
+===rep< Rule, Number >===
+
+Semantically equivalent to `seq< Rule, ..., Rule >` with `Number` repetitions of `Rule`.
 
 ===ifthen< Cond, Then >===
 
@@ -361,13 +365,17 @@ Semantically equivalent to `seq< Cond, must< Then > >`.
 
 Semantically equivalent to `sor< seq< Cond, Then >, seq< not_at< Cond >, Else > >`, except for invoking `Cond` only once.
 
-===ifmust< Cond, Then >===
+===ifmustelse< Cond, Then, Else >===
 
 Semantically equivalent to `sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > >`, except for invoking `Cond` only once.
 
 ===pad< Rule, PadL, PadR >===
 
-Semantically equivalent to `seq< star< PadL >, Rule, star< PadR > >`; `PadR` defaults to `PadL`.
+Semantically equivalent to `seq< star< PadL >, Rule, star< PadR > >`; the `PadR` template argument defaults to `PadL`.
+
+===action< Rule, Func >===
+
+Semantically equivalent to `Rule` with respect to parsing, however on success of `Rule` invokes the static class function `Func::matched( const std::string &, ??? )` with the portion of the input that matched `Rule` as first argument, and forwards any _state_ that was passed to `action` as further arguments. (As in the whole library, C++0x variadic templates and rvalue-references are used to achieve "perfect forwarding" of the _state_ to `Func::matched`.)
 
 
 =Advanced=
@@ -412,6 +420,11 @@ A better, equivalent, expression is the following.
    struct foo
          : until< bar, eof > {};
 }}}
+
+
+===Changelog===
+
+2008-04-03: Changelog starts with PEGTL version 0.9.
 
 
 =License=

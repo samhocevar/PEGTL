@@ -12,7 +12,7 @@ namespace sexpr
    // Base class for our tree-like data structure ...
 
    struct node_base
-	 : private utils::nocopy< node_base >
+	 : private nocopy< node_base >
    {
       virtual ~node_base() {}
 
@@ -48,7 +48,7 @@ namespace sexpr
 
       void v_print( std::ostream & o ) const
       {
-	 o << "( " << m_car << " " << m_cdr << " )";
+	 o << "( " << m_car << " . " << m_cdr << " )";
       }
    };
 
@@ -160,11 +160,11 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       std::shared_ptr< sexpr::node_base > result;
-      if ( pegtl::parse< sexpr::read_file >( argv[ arg ], arg, result ) ) {
-	 UTILS_PRINT( "input " << argv[ arg ] << " result " << result );
+      if ( pegtl::parse< sexpr::read_file >( pegtl::read_file( argv[ arg ] ), argv[ arg ], result ) ) {
+	 PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
       }
       else {
-	 UTILS_PRINT( "input " << argv[ arg ] << " invalid" );
+	 PEGTL_PRINT( "input from file " << argv[ arg ] << " invalid" );
       }
    }
    return 0;

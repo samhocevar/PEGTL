@@ -5,37 +5,11 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_PARSE_HH
-#define COHI_PEGTL_PARSE_HH
-
+#ifndef COHI_PEGTL_PARSER_HH
+#define COHI_PEGTL_PARSER_HH
 
 namespace pegtl
 {
-   struct dummy_debug
-   {
-      bool must() const
-      {
-	 return true;  // Don't care, could also be false.
-      }
-
-      template< typename Rule >
-      void init()
-      { }
-
-      template< typename Rule, typename Input, typename... Class >
-      bool match( Input & in, Class && ... cl )
-      {
-	 return Rule::template s_match( in, std::forward< Class >( cl ) ... );
-      }
-	 
-      template< typename Rule, typename Input, typename... Class >
-      bool match( const bool, Input & in, Class && ... cl )
-      {
-	 return Rule::template s_match( in, std::forward< Class >( cl ) ... );
-      }
-   };
-
-
    template< typename Rule, typename Debug >
    class parser
    {
@@ -66,8 +40,8 @@ namespace pegtl
 	 }
 	 catch ( std::exception & e )
 	 {
-	    UTILS_PRINT( "pegtl: parsing input from " << in.debug() << " aborted" );
-	    UTILS_PRINT( e.what() );
+	    PEGTL_PRINT( "pegtl: parsing input from " << in.debug() << " aborted" );
+	    PEGTL_PRINT( e.what() );
 	 }
 	 return false;
       }
@@ -76,7 +50,6 @@ namespace pegtl
       Debug m_debug;
    };
 
-
    template< typename Rule, typename Debug = basic_debug, typename ... Class >
    bool parse( const std::string & i, const int d, Class && ... cl )
    {
@@ -84,14 +57,12 @@ namespace pegtl
       return parser< Rule, Debug >()( in, std::forward< Class >( cl ) ... );
    }
 
-
    template< typename Rule, typename Debug = basic_debug, typename ... Class >
    bool parse( const std::string & i, const std::string & d, Class && ... cl )
    {
       input in( i, d );
       return parser< Rule, Debug >()( in, std::forward< Class >( cl ) ... );
    }
-
 
    template< typename Rule, typename Debug = trace_debug, typename ... Class >
    bool parse( const bool trace, const std::string & i, const std::string & d, Class && ... cl )

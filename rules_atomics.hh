@@ -5,9 +5,8 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_VALUE_HH
-#define COHI_PEGTL_VALUE_HH
-
+#ifndef COHI_PEGTL_ATOMICS_HH
+#define COHI_PEGTL_ATOMICS_HH
 
 namespace pegtl
 {
@@ -35,7 +34,6 @@ namespace pegtl
       }
    };
 
-
    template< int C >
    struct one
    {
@@ -47,7 +45,7 @@ namespace pegtl
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 const std::string n = "\"" + utils::escape( C ) + "\"";
+	 const std::string n = "\"" + escape( C ) + "\"";
 	 st.template update< one >( n, true );
       }
 
@@ -59,11 +57,9 @@ namespace pegtl
       }
    };
 
-
    template< int C >
    struct at_one
 	 : at< one< C > > {};
-
 
    template< int C >
    struct not_one
@@ -76,7 +72,7 @@ namespace pegtl
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 const std::string n = std::string( "\"[^" ) + utils::escape( C ) + "]\"";
+	 const std::string n = std::string( "\"[^" ) + escape( C ) + "]\"";
 	 st.template update< not_one >( n, true );
       }
 
@@ -88,17 +84,14 @@ namespace pegtl
       }
    };
 
-
    template< int C >
    struct at_not_one
 	 : at< not_one< C > > {};
 
-
-   template< int... Chars > struct one_list;
-
+   template< int... Chars > struct list;
 
    template<>
-   struct one_list<>
+   struct list<>
    {
       static void d_i( std::ostream & )
       {
@@ -111,13 +104,12 @@ namespace pegtl
       }
    };
 
-
    template< int Char, int... Chars >
-   struct one_list< Char, Chars... >
+   struct list< Char, Chars... >
    {
       static std::string key()
       {
-	 return typeid( one_list ).name();
+	 return typeid( list ).name();
       }
 
       template< typename Print >
@@ -126,7 +118,7 @@ namespace pegtl
 	 std::ostringstream o;
 	 d_i( o );
 	 const std::string n = std::string( "\"[" ) + o.str() + "]\"";
-	 st.template update< one_list >( n, true );
+	 st.template update< list >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
@@ -138,116 +130,110 @@ namespace pegtl
 
       static void d_i( std::ostream & o )
       {
-	 o << utils::escape( Char );
-	 one_list< Chars... >::d_i( o );
+	 o << escape( Char );
+	 list< Chars... >::d_i( o );
       }
 
       static bool m_i( const int i )
       {
-	 return ( i == Char ) || one_list< Chars... >::m_i( i );
+	 return ( i == Char ) || list< Chars... >::m_i( i );
       }
    };
 
-
    template< int... Chars >
-   struct one_not_list
+   struct not_list
    {
       static std::string key()
       {
-	 return typeid( one_not_list ).name();
+	 return typeid( not_list ).name();
       }
 
       template< typename Print >
       static void s_insert( Print & st )
       {
 	 std::ostringstream o;
-	 one_list< Chars ... >::d_i( o );
+	 list< Chars ... >::d_i( o );
 	 const std::string n = std::string( "\"[^" ) + o.str() + "]\"";
-	 st.template update< one_not_list >( n, true );
+	 st.template update< not_list >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {      
 	 character< Input > h( in );
-	 return h( ! one_list< Chars ... >::m_i( h ) );
+	 return h( ! list< Chars ... >::m_i( h ) );
       }
    };
 
+   template< int... Chars >
+   struct at_list
+	 : at< list< Chars... > > {};
 
    template< int... Chars >
-   struct at_one_list
-	 : at< one_list< Chars... > > {};
-
-
-   template< int... Chars >
-   struct at_one_not_list
-	 : at< one_not_list< Chars... > > {};
-
+   struct at_not_list
+	 : at< not_list< Chars... > > {};
 
    template< int C, int D >
-   struct one_range
+   struct range
    {
       static std::string key()
       {
-	 return typeid( one_range ).name();
+	 return typeid( range ).name();
       }
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 const std::string n = std::string( "\"[" ) + utils::escape( C ) + "-" + utils::escape( D ) + "]\"";
-	 st.template update< one_range >( n, true );
+	 const std::string n = std::string( "\"[" ) + escape( C ) + "-" + escape( D ) + "]\"";
+	 st.template update< range >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
+	 static_assert( C <= D, "pegtl: illegal expression range< C, D > where C is greater than D" );
 	 character< Input > h( in );
 	 return h( ( h >= C ) && ( h <= D ) );
       }
    };
 
-
    template< int C, int D >
-   struct one_not_range
+   struct not_range
    {
       static std::string key()
       {
-	 return typeid( one_not_range ).name();
+	 return typeid( not_range ).name();
       }
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 const std::string n = std::string( "\"[^" ) + utils::escape( C ) + "-" + utils::escape( D ) + "]\"";
-	 st.template update< one_not_range >( n, true );
+	 const std::string n = std::string( "\"[^" ) + escape( C ) + "-" + escape( D ) + "]\"";
+	 st.template update< not_range >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
+	 static_assert( C <= D, "pegtl: illegal expression not_range< C, D > where C is greater than D" );
 	 character< Input > h( in );
 	 return h( ( h < C ) || ( h > D ) );
       }
    };
 
+   template< int C, int D >
+   struct at_range
+	 : at< range< C, D > > {};
 
    template< int C, int D >
-   struct at_one_range
-	 : at< one_range< C, D > > {};
-
-
-   template< int C, int D >
-   struct at_one_not_range
-	 : at< one_not_range< C, D > > {};
-
+   struct at_not_range
+	 : at< not_range< C, D > > {};
 
    template< int... Chars > struct string;
 
-
    template<>
-   struct string<> : success
+   struct string<>
+	 : success
    {
       template< typename Print >
       static void d_i( std::ostream &, Print & )
@@ -255,7 +241,6 @@ namespace pegtl
 	 ;
       }
    };
-
 
    template< int Char, int... Chars >
    struct string< Char, Chars... >
@@ -269,7 +254,7 @@ namespace pegtl
       static void d_i( std::ostream & o, Print & st )
       {
 	 st.template insert< one< Char > >();
-	 o << utils::escape( Char );
+	 o << escape( Char );
 	 string< Chars... >::d_i( o, st );
       }
       
@@ -285,14 +270,17 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 return de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, std::forward< Class >( cl ) ... );
+	 return de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, de, std::forward< Class >( cl ) ... );
       }
    };
-
 
    template< int Char, int... Chars >
    struct at_string
 	 : at< string< Char, Chars... > > {};
+
+   template< int Char, typename RulePadL, typename RulePadR = RulePadL >
+   struct pad_one
+	 : pad< one< Char >, RulePadL, RulePadR > {};
 
 } // pegtl
 

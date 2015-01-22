@@ -5,9 +5,8 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_PRINT_HH
-#define COHI_PEGTL_PRINT_HH
-
+#ifndef COHI_PEGTL_PRINTER_HH
+#define COHI_PEGTL_PRINTER_HH
 
 namespace pegtl
 {
@@ -98,10 +97,10 @@ namespace pegtl
       {
 	 for ( map_type::const_iterator i = m_rules.begin(); i != m_rules.end(); ++i ) {
 	    if ( i->second.m_name == i->second.m_expr ) {
-	       UTILS_PRINT( "RULE1 " << i->second.m_name );
+	       PEGTL_PRINT( "RULE1 " << i->second.m_name );
 	    }
 	    else {
-	       UTILS_PRINT( "RULE2 " << i->second.m_name << " === " << i->second.m_expr );
+	       PEGTL_PRINT( "RULE2 " << i->second.m_name << " === " << i->second.m_expr );
 	    }
 	 }
       }
@@ -115,13 +114,12 @@ namespace pegtl
       template< typename Rule >
       void insert_impl( const bool force = false )
       {
-	 const std::string n = utils::demangle< Rule >();
+	 const std::string n = demangle< Rule >();
 	 if ( m_rules.insert( std::make_pair( key< Rule >(), value_type( n, n ) ) ).second || force ) {
 	    Rule::s_insert( *this );
 	 }
       }
    };
-
 
    template<>
    struct printer::insert_help<>
@@ -130,7 +128,6 @@ namespace pegtl
       static void insert( Print &, const bool )
       { }
    };
-
 
    template< typename Rule, typename... Rules >
    struct printer::insert_help< Rule, Rules... >
@@ -142,7 +139,6 @@ namespace pegtl
 	 insert_help< Rules... >::insert( st, force );
       }
    };
-
 
    struct names_impl
    {
@@ -170,9 +166,7 @@ namespace pegtl
       const std::string m_result;
    };
 
-
    template< typename ... Rules > struct names;
-
 
    template< typename Rule >
    struct names< Rule > : public names_impl
@@ -182,7 +176,6 @@ namespace pegtl
 	    : names_impl( a + name< Rule >( st ) + c )
       { }
    };
-
 
    template< typename Rule1, typename Rule2, typename ... Rules >
    struct names< Rule1, Rule2, Rules ... > : public names_impl

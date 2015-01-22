@@ -45,19 +45,19 @@ namespace calculator
       template< typename Rule, typename Stack >
       static void matched( const std::string & m, Stack & s )
       {
-	 s.push_back( utils::string_to_signed< typename Stack::value_type >( m ) );
+	 s.push_back( string_to_signed< typename Stack::value_type >( m ) );
       }
    };
 
    struct read_number
-	 : seq< opt< one_list< '+', '-' > >, plus< digit > > {};
+	 : seq< opt< list< '+', '-' > >, plus< digit > > {};
 
    struct push_number
-	 : pad< action< read_number, push_action >, white > {};
+	 : pad< action< read_number, push_action >, space > {};
 
    template< int C >
    struct calc_pad
-	 : pad_one< C, white > {};
+	 : pad_one< C, space > {};
 
    struct read_open
 	 : calc_pad< '(' > {};
@@ -97,7 +97,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       calculator::stack stack;
-      if ( pegtl::parse< calculator::read_calc >( argv[ arg ], "command line agument", stack ) ) {
+      if ( pegtl::parse< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
 	 assert( stack.size() == 1 );
 	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
       }

@@ -1,0 +1,10 @@
+.svn
+build
+manual
+private
+
+msvc/Debug
+msvc/Release
+msvc/*.opensdf
+msvc/*.sdf
+msvc/*.suo

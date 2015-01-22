@@ -1,0 +1,392 @@
+===Welcome to the===
+
+==Parsing Expression Grammar Template Library==
+
+Copyright (c) 2008 Colin Hirsch
+
+
+=Introduction=
+
+The Parsing Expression Grammar Template Library" (PEGTL) is a C++ library for creating parsers according to a Parsing Expression Grammar (PEG).
+Grammars are embedded as regular C++ code, and consist of hierarchies of (templated) classes.
+These class hierarchies naturally correspond to the inductive definitions of PEGs.
+The library extends on the subject of PEGs with new expression types, and mechanisms to ensure helpful diagnostics in case of parsing errors.
+PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
+
+===Status===
+
+This library is not yet finished.
+
+The actual parsing rules are ready, however the input abstraction needs to be cleaned up, testcases need to be written, the included examples need to be extended, and the documentation completed.
+
+===Features===
+
+*Advantages*
+
+  * Extended set of PEG expressions.
+  * Produces very efficient parsers.
+  * Customisable input abstraction.
+  * Customisation point for debugging.
+  * Supports arbitrary user-defined parser state.
+  * Expressions expressed in straight C++ code.
+  * (Detects some invalid grammars at compile-time.)
+  * (Optimises some redundancies in the grammar at compile-time.)
+  * Produces human-readable (nearly-)pretty-printing of grammar rules.
+  * More flexibility and better diagnostics thanks to variadic templates.
+
+*Disadvantages*
+ 
+  * Left-recursive rules may not be used.
+
+(This is an inherent limitation of the PEG formalism.)
+
+*Compared to Context Free Grammars*
+
+  * No ambiguities.
+  * Strictly greater expressive power.
+  * No separate tokenisation required for parsers.
+
+(Tokenisation can be subsumed by the actual parser.)
+
+===Audience===
+
+The PEGs should be easy to learn and apply by anyone experienced with formal languages, in particular context-free grammars (CFG) and their representation in Backus-Naur form (BNF, EBNF).
+The PEGTL can be used to effectively create efficient and powerful parsers in C++0x.
+
+===Limitations===
+
+The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time polymorphism, i.e. interface classes and virtual functions) where grammars are created mainly by instantiating appropriate class templates.
+It might therefore not be well suited for applications that create and/or change grammars at run-time.
+Support for run-time polymorphism might be included in the future if required.
+
+The PEGTL currently only handles ASCII input data.
+Character sets/encodings compatible with ASCII that do _not_ use variable-length character encodings, e.g. ISO 8859-1, should work too.
+Support for UTF-8 and raw binary data is likely to be included in the near future.
+Other character sets and encodings will probably never be supported.
+
+The PEGTL uses straight-forward back-tracking which reads parts of the input multiple times.
+Currently it is not possible to use a PEGTL parser with an input iterator without buffering the whole input in a dedicated buffer, which is not very suitable for very large inputs.
+Support for very large inputs might be included in the future.
+
+===Requirements===
+
+The PEGTL uses feaatures from C++0x and requires GCC 4.3.0, or later, to compile.
+Only headers and libraries from C99, C++98, TR1, and/or C++0x are used by the PEGTL.
+
+The PEGTL was developed and tested with GCC 4.3.0 under Mac OS X 10.5.2 on a dual-core MacBook Pro.
+
+===Installation===
+
+The latest PEGTL distribution is available from the [http://code.google.com/p/pegtl/downloads/list "Downloads"] section of the Google Code [http://code.google.com/p/pegtl project home page].
+PEGTL is a header-only library that neither requires any compilation during installation, nor creates any library for applications to link against.
+To install, all header files must be copied to your projects' directory of include files, a dedicated directory like `/usr/local/pegtl/`, or any other location that is appropriate.
+
+For projects using the PEGTL, it must be ensured that a suitable compiles is used, and that the directory with the PEGTL header files is in the include search path.
+For recommended compiler switches see the file `compile.sh` included in the PEGTL distribution archive; if a project using the PEGTL compiles, it can be reasonably assumed to function correctly.
+
+(It is highly recommended to change the relevant compiler switches in `compile.sh` to whatever is used in your projects, and then invoke it to build the examples and run all unit tests included with the library.)
+
+
+=Tutorial=
+
+This tutorial covers basic use cases of the PEGTL: how to use the provided facilities to parse an input, and how to perform user-defined actions while doing so.
+
+===Basic Concepts===
+
+A PEGTL _parser_ is a front-end class or function that ties together all that is required to actually parse something.
+A parser needs a _rule_ that represents a grammar expression, an _input_ to parse, and a _debug_ that determines if, when and how to generate diagnostic messages.
+
+All three of _rule_, _input_, and _debug_ are appropriate classes.
+In this tutorial, only the provided _input_ and _debug_ classes will be used.
+
+_Rules_ are classes that represent grammar expressions.
+The PEGTL provides rules for all PEG operations, plus atomic rules for characters, strings, some character classes, and some convenience rules.
+_Rules_ are combined to new _rules_ by specialising and/or instantiating the class templates that correspond to non-atomic parsing expressions.
+
+===First Example===
+
+For example, consider the _rule_ `first` as provided in `first.cc`.
+
+{{{
+using namespace pegtl;
+
+struct first
+      : seq< alpha, star< sor< alpha, digit > > > {};
+}}}
+
+The rules `alpha` and `digit` are provided and accept a single ASCII letter, or digit, respectively.
+The `seq` template concatenates expressions, `sor` is the ordered choice, and `star` the usual repetition.
+The _rule_ can be read as "an alpha, followed by zero-or-more characters that can be either alphas or digits", i.e. the regular expression "[a-zA-Z][a-zA-Z0-9]*".
+
+===Actual Parsing===
+
+Once _rule_ is defined, it can be used in conjunction with an _input_ and a _debug_ to actually parse something.
+Currently one _input_ class `pegtl::input` is provided in `pegtl_input.hh`.
+It can read from a file, a `std::string`, or an arbitrary iterator range of characters.
+
+For the _debug_ there is currently a choice of three classes defined in `pegtl_parse.hh` and `pegtl_debug.hh`.
+
+  # Class `pegtl::dummy_debug` does not produce any diagnostic messages.
+  # Class `pegtl::basic_debug` generates diagnostic messages in case of error.
+  # Class `pegtl::trace_debug` generates diagnostic messages for every rule invocation.
+
+Note that class `pegtl::trace_debug` has a run-time flag to disable trace messages, in which case it falls back to the behaviour of class `pegtl::basic_debug`.
+
+===First Example (cont'd)===
+
+The easiest way to do some actual parsing is by calling one of the `parse` front-end functions with two strings as argument.
+The first string is the input to the _parser_, the second string is used for diagnostic purposes only and should provide information as to where the first string was obtained from.
+This might be a filename, a socket address, etc., or a command line argument as in the example below.
+
+{{{
+   int main( int argc, char ** argv )
+   {
+      for ( int i = 1; i < argc; ++i ) {
+         parse< first >( argv[ i ], "command line argument" );
+      }
+      return 0;
+   }
+}}}
+
+The `parse` function internally creates an instance of class `pegtl::input` and, by default, uses a `basic_debug` in order to provide "sensible" error messages.
+It is declared as follows.
+
+{{{
+   template< typename Rule, typename Debug = basic_debug, typename ... Class >
+   bool parse( const std::string & input, const std::string & debug, Class && ... cl );
+}}}
+
+The return value indicates whether parsing was successful.
+
+===State and Actions===
+
+A _parser_ can be invoked with arbitrary _state_ that is recursively passed from _rule_ invocation to _rule_ invocation.
+
+
+=Combinators=
+
+===eof===
+
+  * Succeeds iff all the input has been consumed.
+  * Does not consume any input.
+
+===any===
+
+Read any single character from the input.
+
+  * Succeeds iff not all of the input has been consumed.
+  * Consumes one character.
+
+===success===
+
+  * Always succeeds.
+  * Does not consume any input.
+
+===failure===
+
+  * Always fails (but does not itself throw an exception).
+  * Does not consume any input.
+
+===opt< Rule >===
+
+The 'opt' template corresponds to the "optional expression", or the "?"-operator.
+
+  * Always succeeds.
+  * Consumes as much input as 'Rule' consumes.
+
+===star< Rule >===
+
+The 'star' template corresponds to the "zero-or-more repetition expression", the Kleene-star, or the "*"-operator.
+
+  * Always succeeds.
+
+===plus< Rule >===
+
+The 'plus' template corresponds to the "one-or-more repetition expression", or the "+"-operator.
+
+  * Succeeds iff 'Rule' succeeds.
+
+===sor< Rule, ... >===
+
+The 'sor' variadic template corresponds to the "choice expression", or the "/"-operator.
+
+  * Succeeds iff at least one of the given rules succeed.
+  * The rules are all invoked at the same input position.
+  * Consumes exactly the input that the first successful rule consumes.
+
+===seq< Rule, ... >===
+
+The 'seq' variadic template corresponds to the "sequence expression", which is written by concatenation of expressions separated by a space, and therefore does not have a symbol.
+
+  * Succeeds iff all of the given rules succeed.
+  * The rules are invoked in sequence, each rule continuing at the first input position not handled by the previous rule (or eof).
+
+===at< Rule >===
+
+The 'at' template corresponds to the positive "syntactic predicate", or the "&"-operator.
+
+  * Succeeds iff 'Rule' succeeds.
+  * Does not consume any input.
+
+===not_at< Rule >===
+
+The 'not_at' template corresponds to the negative "syntactic predicate", or the "!"-operator.
+
+  * Succeeds iff 'Rule' does not succeed.
+  * Does not consume any input.
+
+===must< Rule >===
+
+The 'must' template invokes 'Rule', but transforms a failure of 'Rule' into an exception.
+
+  * Either succeeds or throws an exception.
+  * Consumes as much input as 'Rule' consumes.
+
+
+=Atomic Rules=
+
+This list might be incomplete; see the PEGTL source for all provided rules.
+
+===one< Char >===
+
+Read one given character from the input.
+
+  * Succeeds iff next input character is equal to `Char`.
+  * Consumes one character.
+
+===text< Char, ... >===
+
+Read a given text or string from the input.
+
+Semantically equivalent to `seq< one< Char >, ... >`.
+
+This rule is a variadic template.
+
+===not_one< Char >===
+
+  * Succeeds iff next input character is not equal to `Char`.
+  * Consumes one character.
+
+===one_list< Char, ... >===
+
+Read one character from a given list from the input.
+
+  * Succeeds iff next input character is equal to one of the template arguments.
+  * Consumes one character.
+
+This rule is a variadic template.
+
+===one_range< Char1, Char2 >===
+
+Read one character from a given range from the input.
+
+  * Succeeds iff next input character is in the closed range `[Char1, Char2]`.
+  * Consumes one character.
+
+
+=Convenience Rules=
+
+This list might be incomplete; see the PEGTL source for all provided rules.
+
+===eol===
+
+Accepts one line-feed character.
+
+===eol_or_eof===
+
+Equivalent to 'sor< eof, eol >'.
+
+===space===
+
+Accepts one space or tab character.
+
+===white===
+
+Accepts one space, vertical or horizontal tab, line-feed or carriage-return.
+
+===digit===
+
+Accepts regular expression '[0-9]'.
+
+===lower===
+
+Accepts regular expression '[a-z]'.
+
+===upper===
+
+Accepts regular expression '[A-Z]'.
+
+===alpha===
+
+Accepts regular expression '[a-zA-Z]'.
+
+===ident===
+
+Accepts regular expression '[a-zA-Z_][a-zA-Z0-9_]*'.
+
+===until1< Cond >===
+
+Semantically equivalent to the recursive 'Rule = sor< at< Cond >, seq< any, Rule > >', but implemented without recursion.
+
+===until< What, Cond >===
+
+Semantically equivalent to the recursive 'Rule = sor< at< Cond >, seq< What, Rule > >', but implemented without recursion.
+
+===ifthen< Cond, Then >===
+
+Semantically equivalent to 'sor< seq< Cond, Then >, not_at< Cond > >', except for invoking 'Cond' only once.
+
+===ifmust< Cond, Then >===
+
+Semantically equivalent to 'seq< Cond, must< Then > >'.
+
+===ifthenelse< Cond, Then, Else >===
+
+Semantically equivalent to 'sor< seq< Cond, Then >, seq< not_at< Cond >, Else > >', except for invoking 'Cond' only once.
+
+===ifmust< Cond, Then >===
+
+Semantically equivalent to 'sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > >', except for invoking 'Cond' only once.
+
+===pad< Rule, PadL, PadR >===
+
+Semantically equivalent to 'seq< star< PadL >, Rule, star< PadR > >'; 'PadR' defaults to 'PadL'.
+
+
+=Advanced=
+
+This section covers advanced topics and library internals.
+
+===Optimisations===
+
+The PEGTL contains some specialisations of the class templates of its rules that optimise some simple redundancies in the grammar.
+For example, `at< at< Rule > >` is transformed into the equivalent `at< Rule >`.
+
+When the macro PEGTL_IMPURE_OPTIMISATIONS is defined, additional template specialisations are enabled that perform optimisations on a grammar that are not always "safe" in the following sense.
+The optimisations elide rule invocations that are not necessary for the decision of whether the parser succeeds for any given input.
+However, if these rules perform additional operations on the parser state, or have global side-effects, the behaviour will be different compared to the non-optimised version.
+
+For example, `at< star< Rule > >` always succeeds, and can therefore be transformed into `success`; however `at< star< Rule > >` will invoke `Rule` at least once, while `success` will never invoke `Rule`.
+The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compiler flags, by changing `pegtl.hh`, or by defining it in the code that includes `pegtl.hh` before the corresponding include preprocessor directive.
+
+===Recursion===
+
+Every rule invocation consists of a function call.
+The PEGTL often uses guard-objects in its implementation, which is good C++ style, but unfortunately prevents tail-calls from being optimised.
+To prevent a stack overflow, grammars should prefer to use rules for iteration, rather than recursive rules, wherever possible.
+
+This means, in particular, to avoid "head and tail"-style recursion which is used in many functional programming languages.
+For example, to express that a 'foo' is either empty, or a 'bar' followed by a 'foo', we could write the grammar as follows.
+
+{{{
+   struct foo
+   	 : sor< eof, seq< bar, foo > > {};
+}}}
+
+Here every recursive call of 'foo' creates a new stack-frame.
+A better, equivalent, expression is the following.
+
+{{{
+   struct foo
+         : until< bar, eof > {};
+}}}

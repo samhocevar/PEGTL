@@ -1,0 +1,63 @@
+// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Please see license.txt for license.
+
+#include <pegtl.hh>
+
+
+namespace pegtl
+{
+   struct read_expr;
+
+   struct read_comment
+	 : seq< one< '#' >, until_eol_or_eof > {};
+
+   struct read_terminal_char
+	 : ifmust< one< '\'' >, seq< not_one< '\'' >, one< '\'' > > > {};
+
+   struct read_terminal_string
+	 : ifmust< one< '"' >, seq< star< not_one< '"' > >, one< '"' > > > {};
+
+   struct read_infix
+	 : pad< one_list< '/', '.' >, space > {};
+
+   struct read_prefix
+	 : pad< one_list< '!', '&' >, space > {};
+
+   struct read_postfix
+	 : pad< one_list< '+', '*', '?' >, space > {};
+
+   struct read_paren
+	 : ifmust< pad_one< '(', space >, seq< read_expr, pad_one< ')', space > > > {};
+
+   struct read_atomic
+	 : sor< read_terminal_char, read_terminal_string > {};
+
+   struct read_body
+	 : sor< read_paren, read_atomic > {};
+
+   struct read_expr
+	 : seq< opt< read_prefix >, read_body, opt< read_postfix >, ifthen< read_infix, read_expr > > {};
+
+   struct read_rule
+	 : seq< ident, pad_one< '=', space >, read_expr > {};
+
+   struct read_line
+	 : sor< read_comment, read_rule > {};
+
+   struct read_file
+	 : until< read_line, white_until_eof > {};
+
+} // pegtl
+
+int main( int argc, char ** argv )
+{
+   for ( int arg = 1; arg < argc; ++arg ) {
+      if ( pegtl::parse< pegtl::read_file >( true, argv[ arg ], "command line argument" ) ) {
+	 std::cerr << "input " << argv[ arg ] << " valid\n";
+      }
+      else {
+	 std::cerr << "input " << argv[ arg ] << " invalid\n";
+      }
+   }
+   return 0;
+}

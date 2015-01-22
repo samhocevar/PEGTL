@@ -36,7 +36,7 @@ namespace pegtl
 
       void write_to( std::ostream & o ) const
       {
-	 o << "line=" << m_line << " column=" << m_column;
+	 o << m_line << "," << m_column;
       }
 
    private:

@@ -10,10 +10,10 @@
 
 namespace pegtl
 {
-   template< typename... Rules > struct insert_help;
+   template< typename... Rules > struct insert_helper;
 
    template<>
-   struct insert_help<>
+   struct insert_helper<>
    {
       template< typename Print >
       static void insert( Print &, const bool )
@@ -21,13 +21,13 @@ namespace pegtl
    };
 
    template< typename Rule, typename... Rules >
-   struct insert_help< Rule, Rules... >
+   struct insert_helper< Rule, Rules... >
    {
       template< typename Print >
       static void insert( Print & st, const bool force )
       {
 	 st.template insert_impl< Rule >( force );
-	 insert_help< Rules... >::insert( st, force );
+	 insert_helper< Rules... >::insert( st, force );
       }
    };
 
@@ -81,7 +81,7 @@ namespace pegtl
 	    return e.m_name;
 	 }
 	 else {
-	    return e.m_name + " === " + e.m_expr;
+	    return e.m_name + " := " + e.m_expr;
 	 }
       }
 
@@ -95,12 +95,12 @@ namespace pegtl
       const std::string & expr()
       {
 	 return find< Rule >().m_expr;
-      }      
+      }
 
       template< typename... Rules >
       void insert( const bool force = false )
       {
-	 insert_help< Rules... >::insert( *this, force );
+	 insert_helper< Rules... >::insert( *this, force );
       }
 
       template< typename Rule >
@@ -129,7 +129,7 @@ namespace pegtl
 	       PEGTL_PRINT( "RULE1 " << i->second.m_name );
 	    }
 	    else {
-	       PEGTL_PRINT( "RULE2 " << i->second.m_name << " === " << i->second.m_expr );
+	       PEGTL_PRINT( "RULE2 " << i->second.m_name << " := " << i->second.m_expr );
 	    }
 	 }
       }
@@ -173,69 +173,25 @@ namespace pegtl
       }
    };
 
-   struct names_impl
+   template< typename Rule, typename Print >
+   std::string names( Print & st, const std::string &, const std::string &, const std::string & )
    {
-      explicit names_impl( const std::string & result )
-	    : m_result( result )
-      { }
-
-      std::string operator() () const
-      {
-	 return m_result;
-      }
-
-      operator std::string () const
-      {
-	 return m_result;
-      }
-
-   protected:
-      template< typename Rule, typename Print >
-      static std::string name( Print & st )
-      {
-	 return st.template name< Rule >();
-      }
-
-      const std::string m_result;
-   };
-
-   template< typename ... Rules > struct names;
-
-   template< typename Rule >
-   struct names< Rule > : public names_impl
-   {
-      template< typename Print >
-      names( Print & st, const std::string & a, const std::string &, const std::string & c )
-	    : names_impl( a + name< Rule >( st ) + c )
-      { }
-   };
-
-   template< typename Rule1, typename Rule2, typename ... Rules >
-   struct names< Rule1, Rule2, Rules ... > : public names_impl
-   {
-      template< typename Print >
-      names( Print & st, const std::string & a, const std::string & b, const std::string & c )
-	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, "", b, "" )() + c )
-     { }
-   };
-
-   template< typename Master, typename Rule, typename Print >
-   void prepare1( Print & st, const std::string & a, const std::string &, const std::string &, const std::string &, const std::string & e )
-   {
-      st.template insert< Rule >();
-      const std::string y = demangle< Master >();
-      const std::string m = st.template name< Master >();
-      const std::string n = st.template name< Rule >();
-      st.template update< Master >( a + n + e, m == y );
+      return st.template name< Rule >();
    }
 
-   template< typename Master, typename Rule1, typename Rule2, typename ... Rules, typename Print >
+   template< typename Rule1, typename Rule2, typename ... Rules, typename Print >
+   std::string names( Print & st, const std::string & a, const std::string & b, const std::string & c )
+   {
+      return a + names< Rule1 >( st, "", "", "" ) + b + names< Rule2, Rules ... >( st, "", b, "" ) + c;
+   }
+
+   template< typename Master, typename Rule, typename ... Rules, typename Print >
    void prepare1( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d, const std::string & e )
    {
-     st.template insert< Rule1, Rule2, Rules ... >();
+      st.template insert< Rule, Rules ... >();
       const std::string y = demangle< Master >();
       const std::string m = st.template name< Master >();
-      const std::string n = names< Rule1, Rule2, Rules ... >( st, b, c, d );
+      const std::string n = names< Rule, Rules ... >( st, b, c, d );
       st.template update< Master >( a + n + e, m == y );
    }
 

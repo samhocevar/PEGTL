@@ -174,7 +174,8 @@ namespace pegtl
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 return de.template match< Must && ! sizeof ... ( Rules ), Rule >( in, std::forward< States >( st ) ... ) || pegtl::sor< Rules ... >::template match< Must >( in, de, std::forward< States >( st ) ... );
+	 return de.template match< false, Rule >( in, std::forward< States >( st ) ... ) || pegtl::sor< Rules ... >::template match< false >( in, de, std::forward< States >( st ) ... );
+	 // return de.template match< Must && ! sizeof ... ( Rules ), Rule >( in, std::forward< States >( st ) ... ) || pegtl::sor< Rules ... >::template match< Must >( in, de, std::forward< States >( st ) ... );
       }
    };
 
@@ -252,7 +253,7 @@ namespace pegtl
    };
 
    template< typename Cond, typename ... Rules > struct until;
-   
+
    template< typename Cond, typename Rule, typename ... Rules >
    struct until< Cond, Rule, Rules ... >
    {
@@ -261,7 +262,9 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 prepare2< until, Cond, Rule, Rules ... >( st, "( ", " % ", " ", " )" );
+	 st.template insert< Cond >();
+	 const std::string n = st.template name< Cond >();
+	 prepare1< until, Rule, Rules ... >( st, "", "( ", " ", " )", "{ " + n + " }" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -286,7 +289,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 prepare1< until, Cond >( st, "$", "", "", "", "" );
+	 prepare1< until, Cond >( st, ".{ ", "", "", "", " }" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -305,7 +308,7 @@ namespace pegtl
    };
 
    template< typename Rule, typename Impl >
-   struct derive_helper
+   struct rule_helper
 	 : Impl
    {
       template< typename Print >
@@ -327,7 +330,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 prepare2< cond2impl, Cond, Thens ... >( st, "( ", Must ? " ->> " : " --> ", " ", " )" );
+	 prepare2< cond2impl, Cond, Thens ... >( st, "( ", Must ? " => " : " -> ", " ", " )" );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -345,11 +348,11 @@ namespace pegtl
 
    template< typename Cond, typename ... Thens >
    struct ifmust
-	 : derive_helper< ifmust< Cond, Thens ... >, cond2impl< true, Cond, Thens ... > > {};
+	 : rule_helper< ifmust< Cond, Thens ... >, cond2impl< true, Cond, Thens ... > > {};
 
    template< typename Cond, typename ... Thens >
    struct ifthen
-	 : derive_helper< ifthen< Cond, Thens... >, cond2impl< false, Cond, Thens ... > > {};
+	 : rule_helper< ifthen< Cond, Thens... >, cond2impl< false, Cond, Thens ... > > {};
 
    template< bool Must, typename Cond, typename Then, typename Else >
    struct cond3impl
@@ -359,8 +362,8 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-         prepare2< cond3impl, Cond, Then, Else >( st, "( ", Must ? " ->> " : "-->", " / ", " )" );
-      }      
+         prepare2< cond3impl, Cond, Then, Else >( st, "( ", Must ? " => " : " -> ", " / ", " )" );
+      }
 
       template< bool, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
@@ -378,11 +381,11 @@ namespace pegtl
 
    template< typename Cond, typename Then, typename Else >
    struct ifmustelse
-	 : derive_helper< ifmustelse< Cond, Then, Else >, cond3impl< true, Cond, Then, Else > > {};
+	 : rule_helper< ifmustelse< Cond, Then, Else >, cond3impl< true, Cond, Then, Else > > {};
 
    template< typename Cond, typename Then, typename Else >
    struct ifthenelse
-	 : derive_helper< ifthenelse< Cond, Then, Else >, cond3impl< false, Cond, Then, Else > > {};
+	 : rule_helper< ifthenelse< Cond, Then, Else >, cond3impl< false, Cond, Then, Else > > {};
 
    template< unsigned N, unsigned M, typename ... Rules >
    struct rep2
@@ -418,23 +421,23 @@ namespace pegtl
 
    template< typename Rule, typename PadL, typename PadR = PadL >
    struct pad
-         : derive_helper< pad< Rule, PadL, PadR >, seq< star< PadL >, Rule, star< PadR > > > {};
+         : rule_helper< pad< Rule, PadL, PadR >, seq< star< PadL >, Rule, star< PadR > > > {};
 
    template< typename Rule, typename PadL >
    struct padl
-         : derive_helper< padl< Rule, PadL >, seq< star< PadL >, Rule > > {};
+         : rule_helper< padl< Rule, PadL >, seq< star< PadL >, Rule > > {};
 
    template< typename Rule, typename PadR >
    struct padr
-         : derive_helper< padr< Rule, PadR >, seq< Rule, star< PadR > > > {};
+         : rule_helper< padr< Rule, PadR >, seq< Rule, star< PadR > > > {};
 
    template< typename Rule, typename Glue, typename Action = nop >
    struct list
-         : derive_helper< list< Rule, Glue, Action >, seq< Rule, star< ifmust< Glue, action< Rule, Action > > > > > {};
+         : rule_helper< list< Rule, Glue, Action >, seq< Rule, star< ifmust< Glue, ifapply< Rule, Action > > > > > {};
 
    template< typename Begin, typename Body, typename End = Begin, typename Action = nop >
    struct enclose
-	 : derive_helper< enclose< Begin, Body, End, Action >, ifmust< Begin, action< until< at< End >, Body >, Action >, End > > {};
+	 : rule_helper< enclose< Begin, Body, End, Action >, ifmust< Begin, ifapply< until< at< End >, Body >, Action >, End > > {};
 
 } // pegtl
 

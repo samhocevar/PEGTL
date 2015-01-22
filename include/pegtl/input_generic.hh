@@ -43,7 +43,7 @@ namespace pegtl
       {
 	 return m_value;
       }
-      
+
       bool operator() ( const bool success ) const
       {
 	 if ( success ) {
@@ -89,7 +89,7 @@ namespace pegtl
 
       void write_to( std::ostream & o ) const
       {
-	 o << "offset=" << m_offset;
+	 o << m_offset;
       }
 
    private:

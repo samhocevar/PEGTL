@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_UTILITIES_HH
@@ -28,7 +28,7 @@ namespace pegtl
 
 #define PEGTL_TRACE							\
    PEGTL_PRINT( __FILE__ << " : " << __LINE__ << " : " << __PRETTY_FUNCTION__ )
-   
+
 #define PEGTL_DEBUG( MeSSaGe )						\
    PEGTL_PRINT( __FILE__ << " : " << __LINE__ << " : " << MeSSaGe )
 
@@ -131,7 +131,7 @@ namespace pegtl
       protected:
 	 nocopy() {}
 	 ~nocopy() {}
-	 
+
       private:
 	 nocopy( const nocopy & );
 	 void operator= ( const nocopy & );
@@ -147,7 +147,7 @@ namespace pegtl
       freer( T * const p )
 	    : m_p( p )
       { }
-      
+
       ~freer()
       {
 	 ::free( const_cast< void * >( reinterpret_cast< const volatile void * >( m_p ) ) );
@@ -172,7 +172,7 @@ namespace pegtl
       }
       int status = -1;
       const freer< const char > demangled( abi::__cxa_demangle( mangled, 0, 0, & status ) );
-      
+
       if ( ! demangled.get() ) {
 	 return mangled;
       }
@@ -182,19 +182,22 @@ namespace pegtl
       return mangled;
    }
 
-   template< typename T > std::string demangle()
+   template< typename T >
+   std::string demangle()
    {
       return demangle_impl( typeid( T ).name() );
    }
 
-   std::string nomespace( const std::string & d )
+   template< typename T >
+   std::string demangle( const std::string &, const std::string &, const std::string & )
    {
-      const std::string::size_type n = d.rfind( "::" );
+      return demangle< T >();
+   }
 
-      if ( n == std::string::npos ) {
-	 return d;
-      }
-      return d.substr( n + 2 );
+   template< typename T1, typename T2, typename ... Ts >
+   std::string demangle( const std::string & a, const std::string & b, const std::string & c )
+   {
+      return a + demangle< T1 >() + b + demangle< T2, Ts ... >( "", b, "" ) + c;
    }
 
    class file_reader : private nocopy< file_reader >
@@ -275,7 +278,7 @@ namespace pegtl
       {
 	 ::munmap( const_cast< char * >( m_data ), m_size );
       }
-      
+
       size_t size() const
       {
 	 return m_size;
@@ -326,14 +329,14 @@ namespace pegtl
    {
       S nrv = 0;
       S tmp;
-         
+
       if ( value.empty() ) {
 	 PEGTL_THROW( "string-to-integer conversion failed for empty string" );
       }
       unsigned run = 0;
-         
+
       bool neg = value[ run ] == '-';
-         
+
       if ( value[ run ] == '+' || value[ run ] == '-' ) {
 	 if ( value.size() < 2 ) {
 	    PEGTL_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- sign without number" );
@@ -365,8 +368,8 @@ namespace pegtl
 	 if ( ! ::isspace( value[ run ] ) ) {
 	    PEGTL_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- trailing garbage" );
 	 }
-      }         
-      return nrv;             
+      }
+      return nrv;
    }
 
 } // pegtl

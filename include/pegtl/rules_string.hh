@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -56,7 +56,7 @@ namespace pegtl
 
       template< bool, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug &, States && ... )
-      {      
+      {
 	 if ( in.eof() ) {
 	    return false;
 	 }
@@ -94,7 +94,7 @@ namespace pegtl
 
       template< bool, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug &, States && ... )
-      {      
+      {
 	 if ( in.eof() ) {
 	    return false;
 	 }
@@ -193,7 +193,7 @@ namespace pegtl
 	 o << escape( Char );
 	 string< Chars ... >::i_insert( o, st );
       }
-      
+
       template< typename Print >
       static void prepare( Print & st )
       {
@@ -221,6 +221,25 @@ namespace pegtl
    struct at_string
 	 : at< string< Char, Chars ... > > {};
 
+   struct lf
+	 : one< '\n' > {};
+
+   struct cr
+	 : one< '\r' > {};
+
+   struct crlf
+	 : seq< cr, lf > {};
+
+   struct eol
+	 : sor< eof, crlf, lf, cr >
+   {
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 st.template update< eol >( "eol", true );
+      }
+   };
+
    struct digit
 	 : range< '0', '9' >
    {
@@ -238,7 +257,7 @@ namespace pegtl
       static void prepare( Print & st )
       {
 	 st.template update< lower >( "lower", true );
-      }      
+      }
    };
 
    struct upper
@@ -248,7 +267,7 @@ namespace pegtl
       static void prepare( Print & st )
       {
 	 st.template update< upper >( "upper", true );
-      }      
+      }
    };
 
    struct alpha
@@ -281,27 +300,6 @@ namespace pegtl
       }
    };
 
-   struct ident1
-	 : sor< one< '_' >, alpha > {};
-
-   struct ident2
-	 : sor< digit, ident1 > {};
-
-   struct identifier
-	 : seq< ident1, star< ident2 > > {};
-
-   struct lf
-	 : one< '\n' > {};
-
-   struct cr
-	 : one< '\r' > {};
-
-   struct crlf
-	 : seq< cr, lf > {};
-
-   struct eol
-	 : sor< eof, crlf, lf, cr > {};
-
    struct blank
 	 : one< ' ', '\t' >
    {
@@ -321,6 +319,15 @@ namespace pegtl
 	 st.template update< space >( "space", true );
       }
    };
+
+   struct ident1
+	 : sor< one< '_' >, alpha > {};
+
+   struct ident2
+	 : sor< digit, ident1 > {};
+
+   struct identifier
+	 : seq< ident1, star< ident2 > > {};
 
    template< int Char, typename RulePadL, typename RulePadR = RulePadL >
    struct pad_one

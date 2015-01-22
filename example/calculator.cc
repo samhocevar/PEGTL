@@ -12,7 +12,7 @@ namespace calculator
    // - the four basic arithmetic operations,
    // - grouping brackets.
    // For example input "3 * ( -7 + 9)" yields result 6.
-   
+
    using namespace pegtl;
 
    // The state.
@@ -32,14 +32,20 @@ namespace calculator
       s.pop_back();
       return nrv;
    }
-   
+
    // The actions.
 
    // This action converts the matched sub-string
    // to an integer and pushes it on the stack,
    // which must be its only additional state argument.
 
+   // Deriving from action_helper<> is necessary since
+   // version 0.26; the base class takes care of the pretty-
+   // printing for diagnostic messages, it is necessary for
+   // all action classes that do not derive from a rule class.
+
    struct push_action
+	 : action_helper< push_action >
    {
       static void apply( const std::string & m, stack_type & s )
       {
@@ -55,6 +61,7 @@ namespace calculator
 
    template< typename Operation >
    struct op_action
+	 : action_helper< op_action< Operation > >
    {
       static void apply( const std::string &, stack_type & s )
       {
@@ -63,9 +70,10 @@ namespace calculator
 	 s.push_back( Operation()( b, a ) );
       }
    };
-   
+
    template<>
    struct op_action< std::divides< value_type > >
+	 : action_helper< op_action< std::divides< value_type > > >
    {
       template< typename State >
       static void apply( const std::string &, State & s )
@@ -91,7 +99,7 @@ namespace calculator
    // in order to push the number on the evaluation stack.
 
    struct push_rule
-	 : pad< action< read_number, push_action >, space > {};
+	 : pad< ifapply< read_number, push_action >, space > {};
 
    template< int C >
    struct calc_pad
@@ -109,19 +117,19 @@ namespace calculator
 	 : sor< push_rule, seq< read_open, read_expr, read_close > > {};
 
    struct read_mul
-	 : action< ifmust< calc_pad< '*' >, read_atom >, op_action< std::multiplies< value_type > > > {};
+	 : ifapply< ifmust< calc_pad< '*' >, read_atom >, op_action< std::multiplies< value_type > > > {};
 
    struct read_div
-	 : action< ifmust< calc_pad< '/' >, read_atom >, op_action< std::divides< value_type > > > {};
+	 : ifapply< ifmust< calc_pad< '/' >, read_atom >, op_action< std::divides< value_type > > > {};
 
    struct read_prod
 	 : seq< read_atom, star< sor< read_mul, read_div > > > {};
 
    struct read_add
-	 : action< ifmust< calc_pad< '+' >, read_prod >, op_action< std::plus< value_type > > > {};
+	 : ifapply< ifmust< calc_pad< '+' >, read_prod >, op_action< std::plus< value_type > > > {};
 
    struct read_sub
-	 : action< ifmust< calc_pad< '-' >, read_prod >, op_action< std::minus< value_type > > > {};
+	 : ifapply< ifmust< calc_pad< '-' >, read_prod >, op_action< std::minus< value_type > > > {};
 
    struct read_expr
 	 : seq< read_prod, star< sor< read_add, read_sub > > > {};

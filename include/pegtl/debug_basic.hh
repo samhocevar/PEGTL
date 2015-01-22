@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -53,10 +53,10 @@ namespace pegtl
 	 const std::string rule = m_printer.template rule< Rule >();
 
 	 if ( ! rule.empty() ) {
-	    PEGTL_LOGGER( Debug, "pegtl: nesting #" << std::setw( 2 ) << m_counter.nest() << " at " << m_location << " rule " << rule );
+	    PEGTL_LOGGER( Debug, "pegtl: #" << m_counter.nest() << " @" << m_location << ": " << rule );
 	 }
       }
-   
+
       void throw_error()
       {
 	 PEGTL_LOGGER( Debug, "pegtl: syntax error at " << m_location );
@@ -84,7 +84,7 @@ namespace pegtl
 	 basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter, m_printer );
 	 return d( Rule::template match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
       }
-	 
+
    protected:
       counter m_counter;
       printer m_printer;

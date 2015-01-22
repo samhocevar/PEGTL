@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -11,10 +11,10 @@
 
 namespace pegtl
 {
-   template< typename ... Funcs > struct apply_impl;
+   template< typename ... Funcs > struct apply_helper;
 
    template<>
-   struct apply_impl<>
+   struct apply_helper<>
    {
       template< typename ... States >
       static void apply( const std::string &, States && ... )
@@ -22,44 +22,44 @@ namespace pegtl
    };
 
    template< typename Func, typename ... Funcs >
-   struct apply_impl< Func, Funcs ... >
+   struct apply_helper< Func, Funcs ... >
    {
       template< typename ... States >
       static void apply( const std::string & s, States && ... st )
       {
 	 Func::apply( s, std::forward< States >( st ) ... );
-	 apply_impl< Funcs ... >::apply( s, std::forward< States >( st ) ... );
+	 apply_helper< Funcs ... >::apply( s, std::forward< States >( st ) ... );
       }
    };
 
-   template< typename ... Funcs >
+   template< typename Func, typename ... Funcs >
    struct apply
    {
       typedef apply key_type;
 
       template< typename Print >
-      static void prepare( Print & )
-      { }
+      static void prepare( Print & st )
+      {
+	 prepare1< apply, Func, Funcs ... >( st, "$", "", " $", "", "" );
+      }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input &, Debug &, States && ... st )
       {
-	 apply_impl< Funcs ... >::apply( "", std::forward< States >( st ) ... );
+	 apply_helper< Func, Funcs ... >::apply( "", std::forward< States >( st ) ... );
 	 return true;
       }
    };
-   
-   template< typename Rule, typename ... Funcs >
-   struct action
+
+   template< typename Rule, typename Func, typename ... Funcs >
+   struct ifapply
    {
-      typedef typename Rule::key_type key_type;
+      typedef ifapply key_type;
 
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >( true );
-	 const std::string e = st.template expr< Rule >();
-	 st.template update< action >( e, false );
+	 prepare2< ifapply, Rule, Func, Funcs ... >( st, "( ", " | $", " $", " )" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -68,76 +68,117 @@ namespace pegtl
 	 typename Input::template marker< false > p( in );
 
 	 if ( Rule::template match< Must >( in, de, std::forward< States >( st ) ... ) ) {
-	    apply_impl< Funcs ... >::apply( std::string( p.here(), in.here() ), std::forward< States >( st ) ... );
+	    apply_helper< Func, Funcs ... >::apply( std::string( p.here(), in.here() ), std::forward< States >( st ) ... );
 	    return p( true );
 	 }
 	 return p( false );
       }
    };
-   
-   template< unsigned N, typename ... Funcs >
-   struct apply_nth
+
+   template< typename Func >
+   struct action_helper
    {
-      template< typename State, typename ... States >
-      static void apply( const std::string & s, State &&, States && ... st )
+      typedef Func key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
       {
-	 apply_nth< N - 1, Funcs ... >::template apply< States ... >( s, std::forward< States >( st ) ... );
+	 st.template update< Func >( demangle< Func >(), true );
       }
    };
-
-   template< typename ... Funcs >
-   struct apply_nth< 0, Funcs ... >
-   {
-      template< typename State, typename ... States >
-      static void apply( const std::string & s, State && st, States && ... )
-      {
-	 apply_impl< Funcs ... >::apply( s, std::forward< State >( st ) );
-      }
-   };
-
-   template< unsigned N, typename Rule, typename ... Funcs >
-   struct action_nth
-   	 : action< Rule, apply_nth< N, Funcs ... > > {};
-
-   // Some simple action classes.
 
    struct nop
    {
+      typedef nop key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 st.template update< nop >( "nop", true );
+      }
+
       template< typename ... States >
       static void apply( const std::string &, States && ... )
       { }
    };
 
-   template< unsigned X >
-   struct apply_notify
+   template< typename Rule >
+   struct ifapply< Rule, nop >
+	 : Rule {};
+
+   template< unsigned N, typename ... Funcs >
+   struct nth
    {
-      template< typename Target >
-      static void apply( const std::string & s, Target & t )
+      typedef nth key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
       {
-	 t.notify( X, s );
+	 const std::string n = to_string( N );
+	 prepare1< nth, Funcs ... >( st, n + ":", "", " $" + n + ":", "", "" );
+      }
+
+      template< typename State, typename ... States >
+      static void apply( const std::string & s, State &&, States && ... st )
+      {
+	 nth< N - 1, Funcs ... >::template apply< States ... >( s, std::forward< States >( st ) ... );
       }
    };
 
-   struct apply_insert
+   template< typename ... Funcs >
+   struct nth< 0, Funcs ... >
    {
+      typedef nth key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 prepare1< nth, Funcs ... >( st, "0:", "", " $0:", "", "" );
+      }
+
+      template< typename State, typename ... States >
+      static void apply( const std::string & s, State && st, States && ... )
+      {
+	 apply_helper< Funcs ... >::apply( s, std::forward< State >( st ) );
+      }
+   };
+
+   struct insert
+   {
+      typedef insert key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 st.template update< nop >( "insert", true );
+      }
+
       template< typename Container >
       static void apply( const std::string & s, Container & c )
       {
 	 c.insert( c.end(), s );
-      }      
+      }
    };
 
-   struct apply_push_back
+   struct push_back
    {
+      typedef push_back key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 st.template update< nop >( "push_back", true );
+      }
+
       template< typename Container >
       static void apply( const std::string & s, Container & c )
       {
 	 c.push_back( s );
       }
    };
-   
+
    // Class capture is both an action and a rule.
-   
+
    // As action, it stores the matched string as value in the
    // 'capture_map &' state, using the template argument as key.
 
@@ -149,7 +190,7 @@ namespace pegtl
    struct capture
    {
       typedef capture key_type;
-      
+
       template< typename Print >
       static void prepare( Print & st )
       {
@@ -166,11 +207,11 @@ namespace pegtl
       static bool match( Input & in, Debug &, const Map & m )
       {
 	 typename Input::template marker< Must > p( in );
-	 
+
 	 const typename Map::const_iterator i = m.find( Key );
 
 	 if ( i == m.end() ) {
-	    return p( false );  // Or assume empty string?
+	    return p( false );  // Or assume empty string? No, too dangerous wrt. infinite recursions.
 	 }
 	 const std::string & s = i->second;
 

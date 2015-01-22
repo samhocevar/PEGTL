@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #include <fstream>
@@ -26,7 +26,7 @@ namespace scheme
 
    template< typename Lexeme >
    struct padded_lexeme
-	 : pegtl::pad< Lexeme, interlexeme_space > {};
+	 : pegtl::rule_helper< padded_lexeme< Lexeme >, pegtl::pad< Lexeme, interlexeme_space > > {};
 
    template< int R > struct digit;
 
@@ -206,9 +206,9 @@ namespace scheme
 
    struct boolean
 	 : padded_lexeme< boolean_ > {};
-   
+
    struct subsequent;
-   
+
    struct peculiar_identifier
 	 : pegtl::seq< pegtl::sor< pegtl::one< '+' >, pegtl::one< '-' >, pegtl::string< '.', '.', '.' >, pegtl::seq< pegtl::string< '-', '>' >, pegtl::star< subsequent > > >, pegtl::at< delimiter > > {};
 
@@ -284,7 +284,7 @@ namespace scheme
 
    struct datum
 	 : pegtl::sor< lexeme_datum, compound_datum > {};
-   
+
    struct r6rs
 	 : pegtl::until< pegtl::space_until_eof, datum > {};
 

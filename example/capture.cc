@@ -26,7 +26,7 @@ namespace example
    // by a non-empty sequence of tabs and spaces.
 
    struct grammar
-	 : seq< action< plus< digit >, capture< 42 > >, plus< blank >, capture< 42 >, eof > {};
+	 : seq< ifapply< plus< digit >, capture< 42 > >, plus< blank >, capture< 42 >, eof > {};
 
    // Note that class capture as rule simply fails
    // when no entry to match can be found in the map.

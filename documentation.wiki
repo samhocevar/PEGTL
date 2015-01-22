@@ -16,7 +16,8 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 ===Status===
 
-PEGTL version 0.11 is ready, and should work "just fine".
+PEGTL version 0.13 is ready, and should work "just fine"
+(note that some functions were renamed from version 0.12).
 
 *Features*
 
@@ -137,22 +138,23 @@ For the resulting grammar there is no difference whether a `typedef` or a `struc
 However it is recommended to _not_ use `typedef` because the PEGTL uses the name of the `struct` in diagnostic messages, which can enhance readability.
 
 The easiest way to do some actual parsing is by calling one of the `parse` front-end functions with two strings as argument.
-In this example the function is `basic_parse_arg()` which uses a `basic_debug` for diagnostic purposes (see below), and takes (at least) two arguments, a string `s` and an integer `i`, where the assumption is that `s == argv[i]`.
+In this example the function is `basic_parse_arg_nothrow()` which uses a `basic_debug` for diagnostic purposes (see below), and takes (at least) two arguments, a string `s` and an integer `i`, where the assumption is that `s == argv[i]`.
 This assumption is only used in error messages that show where the erroneous input came from.
-The _rule_ is, by necessity, a template argument to `basic_parse_arg()`.
+The _rule_ is, by necessity, a template argument to `basic_parse_arg_nothrow()`.
 
 {{{
 int main( int argc, char ** argv )
 {
    for ( int i = 1; i < argc; ++i ) {
-      basic_parse_arg< example::first >( argv[ i ], i );
+      basic_parse_arg_nothrow< example::first >( argv[ i ], i );
    }
    return 0;
 }
 }}}
 
-The return value of `basic_parse_arg()` indicates whether parsing was successful.
+The return value of `basic_parse_arg_nothrow()` indicates whether parsing was successful.
 In the case of failure, diagnostic messages are printed to `std::cerr`.
+Alternatively the function `basic_parse_arg_throws()` could have been used; in the case of failure it throws an exception.
 
 ===State and Actions===
 
@@ -369,6 +371,29 @@ Semantically equivalent to `Rule` with respect to parsing, however on success of
 
 This section covers advanced topics and library internals.
 
+===Anatomy===
+
+A rule class currently must contain three things.
+
+  # A typedef named `key_type`.
+  # A static function named `s_insert()`.
+  # A static function named `s_match()`.
+
+The `s_match()` function is the actual parsing function, the `key_type` and `s_insert()` members are to initialise the rule pretty-printer.
+
+The pretty-printer contains a map from rules to rule names and pretty-printed rules.
+The mangled class name of a rule is used as key to find the corresponding entry at run-time.
+The `key_type` typedef adds a layer of indirection, i.e. `typeid( rule::key_type ).name()` is used instead of `typeid( rule ).name()`, which allows classes to camouflage as other rules.
+This is useful for classes that do more than plain parsing, but who's parsing behaviour is equivalent to some other rule, see for example class `pegtl::action`.
+
+The `s_insert()` function is responsible for inserting an appropriate entry to the run-time map of the pretty-printer.
+The details are not straight-forward and will be documented later.
+
+The `s_match()` function is the actual parsing function, in text-book recursive-descent parser style.
+The return value signals whether the rule succeeded; alternatively an exception can be thrown to signal failure.
+In case of failure, a rule's `s_match()` function *must not* consume any input; helper classes like `pegtl::marker` and `pegtl::character` support this.
+These and other details should be rather straight-forward and reasonably easy to pick up from looking at the existing parsing rule classes in `parse_generic.hh` and `parse_string.hh`.
+
 ===Examples===
 
 The PEGTL distribution archive contains C++ implementation files that were used during development and debugging of the library itself.
@@ -410,6 +435,12 @@ A better, equivalent, expression is the following.
 
 
 ===Changelog===
+
+*PEGTL version 0.13*
+
+  * Added more wrapper functions for parsing (convenience).
+  * Renamed existing wrapper functions for parsing (consistency).
+  * Added `rewind()` method to class `iterator_input` (indirect).
 
 *PEGTL version 0.12*
 

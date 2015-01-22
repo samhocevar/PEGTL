@@ -97,7 +97,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       calculator::stack stack;
-      if ( pegtl::basic_parse_arg< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
+      if ( pegtl::basic_parse_arg_nothrow< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
 	 assert( stack.size() == 1 );
 	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
       }

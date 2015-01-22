@@ -8,7 +8,7 @@ CXXFLAGS=-O3 -g -Wall -Wextra -Wimplicit -Wconversion -Wcast-align -Woverloaded-
 
 .PHONY: clean message
 
-SOURCES:=$(wildcard example/*.cc)
+SOURCES:=$(wildcard */*.cc)
 DEPENDS:=$(SOURCES:.cc=.d)
 PROGRAMS:=$(SOURCES:.cc=)
 

@@ -56,7 +56,7 @@ namespace grammar
 int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::basic_parse_arg< grammar::read_file >( argv[ arg ], arg ) ) {
+      if ( pegtl::basic_parse_arg_nothrow< grammar::read_file >( argv[ arg ], arg ) ) {
 	 std::cerr << "input " << argv[ arg ] << " valid\n";
       }
       else {

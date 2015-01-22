@@ -86,6 +86,7 @@ namespace pegtl
    public:
       iterator_input( const Iterator begin, const Iterator end, const std::string & source )
 	    : m_run( begin ),
+	      m_begin( begin ),
 	      m_end( end ),
 	      m_source( source )
       { }
@@ -107,6 +108,12 @@ namespace pegtl
       const iterator & end() const
       {
 	 return m_end;
+      }
+
+      iterator_input & rewind()
+      {
+	 m_run = m_begin;
+	 return * this;
       }
 
       Location location() const
@@ -147,13 +154,10 @@ namespace pegtl
       }
 
    protected:
-      explicit
-      iterator_input( const std::string & source )
-	    : m_source( source )
-      { }
-      
       iterator m_run;
-      iterator m_end;
+
+      const iterator m_begin;
+      const iterator m_end;
 
       const std::string m_source;
 
@@ -164,6 +168,21 @@ namespace pegtl
 	 }
       }
    };
+
+   // The following classes are helper classes to simplify the implementation
+   // of rules: used correctly, they make adherence to 'do not consume input
+   // on failure' easy.
+   // They are modelled after a transactional style of programming.
+   // The constructor is the 'begin', and 'operator()' when called with
+   // a value of 'true' is the 'commit'. A 'rollback' is performed either
+   // when 'operator()' is called with 'false', or when the destructor is
+   // called without 'operator()' having been called earlier; this provides
+   // for correct behaviour in the presence of exceptions (side note: in C++,
+   // the destructor is the most important 'thing' for exception safety, not
+   // the try-catch block, as in some other languages I do not want to name).
+
+   // Class marker remembers (marks) the current position in the input; a
+   // 'commit' is a nop, a 'rollback' rewinds to the initial position.
 
    template< typename Input >
    class marker
@@ -201,6 +220,10 @@ namespace pegtl
       const typename Input::iterator m_iterator;
    };
 
+   // Class character acts as proxy to the current character in the input;
+   // a 'commit' consumes the character (thereby moving the input to the next
+   // position), a 'rollback' is a nop.
+
    template< typename Input >
    struct character
    {
@@ -229,6 +252,8 @@ namespace pegtl
       Input & m_input;
       const value_type m_value;
    };
+
+   // Please see the supplied rule classes for usage examples...
 
 } // pegtl
 

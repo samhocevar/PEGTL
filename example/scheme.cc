@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl.hh>
+#include <pegtl/pegtl.hh>
 
 // Nearly complete scheme R6RS syntax check.
 // - Only ASCII input is handled correctly.

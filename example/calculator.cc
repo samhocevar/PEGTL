@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl.hh>
+#include <pegtl/pegtl.hh>
 
 // The first program that was used for debugging in the early phase of PEGTL development.
 // It evaluates each command line argument as arithmetic expression consisting of

@@ -31,20 +31,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <constants.hh>
-#include <utilities.hh>
+#include <pegtl/constants.hh>
+#include <pegtl/utilities.hh>
 
-#include <input_generic.hh>
-#include <input_string.hh>
+#include <pegtl/input_generic.hh>
+#include <pegtl/input_string.hh>
 
-#include <parse_counter.hh>
-#include <parse_printer.hh>
-#include <parse_debugger.hh>
-#include <parse_generic.hh>
-#include <parse_string.hh>
+#include <pegtl/parse_counter.hh>
+#include <pegtl/parse_printer.hh>
+#include <pegtl/parse_debugger.hh>
+#include <pegtl/parse_generic.hh>
+#include <pegtl/parse_string.hh>
 
-#include <rules_generic.hh>
-#include <rules_string.hh>
-#include <rules_special.hh>
+#include <pegtl/rules_generic.hh>
+#include <pegtl/rules_string.hh>
+#include <pegtl/rules_special.hh>
 
 #endif

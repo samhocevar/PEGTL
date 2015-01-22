@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl.hh>
+#include <pegtl/pegtl.hh>
 
 // First experiment on how to generate tree structures while parsing.
 
@@ -118,7 +118,7 @@ namespace sexpression
    struct token_action
    {
       template< typename Rule >
-      static void matched( const std::string & token, std::shared_ptr< node_base > & result ) const
+      static void matched( const std::string & token, std::shared_ptr< node_base > & result )
       {
 	 result = std::make_shared< token_node >( token, "no debug information here yet" );
       }

@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl.hh>
+#include <pegtl/pegtl.hh>
 
 // The first example from the documentation.
 

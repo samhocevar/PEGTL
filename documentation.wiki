@@ -78,7 +78,7 @@ Only headers and libraries from GCC 4.3 and the SUSv3 standard are used.
 
 The latest PEGTL distribution is available from the [http://code.google.com/p/pegtl/downloads/list "Downloads"] section of the Google Code [http://code.google.com/p/pegtl project home page].
 PEGTL is a header-only library that neither requires any compilation during installation, nor creates any library for applications to link against.
-To install, all header files must be copied to your projects' directory of include files, a dedicated directory like `/usr/local/pegtl/`, or any other location that is appropriate.
+To install, the directory `include/pegtl` must be copied to your projects' directory of include files, a dedicated directory like `/usr/include/`, or any other location that is appropriate.
 
 For projects using the PEGTL, it must be ensured that a suitable compiler is used, and that the directory with the PEGTL header files is in the include search path.
 For recommended compiler switches see the `Makefile` included in the PEGTL distribution archive; if a project using the PEGTL compiles, it can be reasonably assumed to function correctly.
@@ -116,7 +116,7 @@ Further on, the _rules_ of a grammar will be extended by _state_ and _actions_ i
 
 ===First Example===
 
-As first example consider the _rule_ `first` provided in `first.cc`.
+As first example consider the _rule_ `first` provided in `example/first.cc`.
 
 {{{
 namespace example
@@ -205,7 +205,7 @@ Struct `push_action` is the user-defined action that converts the given string t
 Struct `read_number` is a normal _rule_ that recognises decimal numbers with optional sign.
 Struct `push_number` contains `action< read_number, push_action >`, which invokes `push_action::matched` every time that `read_number` matched.
 
-The included file `sexpression.cc` shows some further examples.
+The included file `example/sexpression.cc` shows some further examples.
 
 ===Error Messages===
 
@@ -411,6 +411,11 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
+*PEGTL version 0.12*
+
+  * Added more directory structure.
+  * Fixed compile-error in `sexpression.cc` (correctness).
+
 *PEGTL version 0.11*
 
   * Fixed back-tracking in class `string` (*correctness*).
@@ -440,7 +445,7 @@ My guideline regarding compatibility between versions is as follows:
 
 ===Thank You===
 
-  * Stephan Beal, for the bug report and suggestions.
+  * Stephan Beal, for the bug reports and suggestions.
 
 
 =License=

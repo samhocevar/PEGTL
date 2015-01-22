@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl.hh>
+#include <pegtl/pegtl.hh>
 
 // The first non-trivial grammar used during development and debugging of the library.
 // This grammar recognises a subset of parsing expression grammar rules.

@@ -137,7 +137,7 @@ namespace pegtl
       }
    };
 
-   template< int... Chars >
+   template< int ... Chars >
    struct not_list
    {
       typedef not_list key_type;
@@ -162,13 +162,13 @@ namespace pegtl
       }
    };
 
-   template< int... Chars >
+   template< int ... Chars >
    struct at_list
-	 : at< list< Chars... > > {};
+	 : at< list< Chars ... > > {};
 
    template< int... Chars >
    struct at_not_list
-	 : at< not_list< Chars... > > {};
+	 : at< not_list< Chars ... > > {};
 
    template< int C, int D >
    struct range
@@ -234,28 +234,34 @@ namespace pegtl
 	 : success
    {
       template< typename Print >
-      static void s_insert( std::ostream &, Print & )
+      static void i_insert( std::ostream &, Print & )
       { }
+
+      template< typename Input, typename Debug, typename ... Class >
+      static bool i_match( Input &, Debug &, Class && ... )
+      {
+	 return true;
+      }
    };
 
-   template< int Char, int... Chars >
-   struct string< Char, Chars... >
+   template< int Char, int ... Chars >
+   struct string< Char, Chars ... >
    {
       typedef string key_type;
 
       template< typename Print >
-      static void s_insert( std::ostream & o, Print & st )
+      static void i_insert( std::ostream & o, Print & st )
       {
 	 st.template insert< one< Char > >();
 	 o << escape( Char );
-	 string< Chars... >::s_insert( o, st );
+	 string< Chars ... >::i_insert( o, st );
       }
       
       template< typename Print >
       static void s_insert( Print & st )
       {
 	 std::ostringstream o;
-	 s_insert( o, st );
+	 i_insert( o, st );
 	 const std::string n = std::string( "\"" ) + o.str() + "\"";
 	 st.template update< string >( n, true );
       }
@@ -264,13 +270,19 @@ namespace pegtl
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
 	 marker< Input > h( in );
-	 return h( de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, de, std::forward< Class >( cl ) ... ) );
+	 return h( i_match( in, de, std::forward< Class >( cl ) ... ) );
+      }
+
+      template< typename Input, typename Debug, typename ... Class >
+      static bool i_match( Input & in, Debug & de, Class && ... cl )
+      {
+	 return one< Char >::template s_match( in, de, std::forward< Class >( cl ) ... ) && pegtl::string< Chars ... >::template i_match( in, de, std::forward< Class >( cl ) ... );
       }
    };
 
-   template< int Char, int... Chars >
+   template< int Char, int ... Chars >
    struct at_string
-	 : at< string< Char, Chars... > > {};
+	 : at< string< Char, Chars ... > > {};
 
    template< int Char, typename RulePadL, typename RulePadR = RulePadL >
    struct pad_one

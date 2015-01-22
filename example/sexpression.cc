@@ -117,7 +117,6 @@ namespace sexpression
 
    struct token_action
    {
-      template< typename Rule >
       static void matched( const std::string & token, std::shared_ptr< node_base > & result )
       {
 	 result = std::make_shared< token_node >( token, "no debug information here yet" );
@@ -157,7 +156,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       std::shared_ptr< sexpression::node_base > result;
-      if ( pegtl::trace_parse_file_nothrow< sexpression::read_file >( true, argv[ arg ], result ) ) {
+      if ( pegtl::trace_parse_string_nothrow< sexpression::read_file >( true, pegtl::read_string( argv[ arg ] ), result ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
       }
       else {

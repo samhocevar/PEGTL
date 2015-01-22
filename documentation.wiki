@@ -16,8 +16,7 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 ===Status===
 
-PEGTL version 0.13 is ready, and should work "just fine"
-(note that some functions were renamed from version 0.12).
+PEGTL version 0.14 is ready, and should work "just fine"; it continues with some smaller improvements and streamlining.
 
 *Features*
 
@@ -436,6 +435,17 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
+*PEGTL version 0.14*
+
+  * Optimised behaviour of seq<> and string<> (performance).
+  * Added detection of division-by-zero to calculator example.
+  * Removed data source debug tracking from the library (simplicity).
+  * Removed run-time limits on rule applications and nesting (simplicity).
+  * Disentangled a couple of header files (maintainability).
+  * Renamed class iterator_input to forward_input (consistency).
+  * Added class string_input to initialise forward_input from a string (convenience).
+  * Removed template argument Rule to action functor's matched() method (simplicity).
+
 *PEGTL version 0.13*
 
   * Added more wrapper functions for parsing (convenience).
@@ -476,7 +486,7 @@ My guideline regarding compatibility between versions is as follows:
 
 ===Thank You===
 
-  * Stephan Beal, for the bug reports and suggestions.
+  * Stephan Beal, for the bug reports, and suggestions and discussions for future development.
 
 
 =License=

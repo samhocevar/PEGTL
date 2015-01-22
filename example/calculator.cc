@@ -31,7 +31,7 @@ namespace calculator
    template< typename Operation >
    struct op_action
    {
-      template< typename Rule, typename Stack >
+      template< typename Stack >
       static void matched( const std::string &, Stack & s )
       {
 	 const decltype( s.pull() ) a = s.pull();
@@ -39,10 +39,26 @@ namespace calculator
 	 s.push_back( Operation()( b, a ) );
       }
    };
+   
+   template<>
+   struct op_action< std::divides< value_type > >
+   {
+      template< typename State >
+      static void matched( const std::string &, State & s )
+      {
+	 const value_type rhs = s.pull();
+	 if ( ! rhs )
+	 {
+	    PEGTL_THROW( "pegtl: division by zero" );
+	 }
+	 const value_type lhs = s.pull();
+	 s.push_back( std::divides< value_type >()( lhs, rhs ) );
+      }
+   };
 
    struct push_action
    {
-      template< typename Rule, typename Stack >
+      template< typename Stack >
       static void matched( const std::string & m, Stack & s )
       {
 	 s.push_back( string_to_signed< typename Stack::value_type >( m ) );
@@ -97,7 +113,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       calculator::stack stack;
-      if ( pegtl::basic_parse_arg_nothrow< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
+      if ( pegtl::basic_parse_string_nothrow< calculator::read_calc >( argv[ arg ], stack ) ) {
 	 assert( stack.size() == 1 );
 	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
       }

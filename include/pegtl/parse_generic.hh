@@ -25,7 +25,11 @@ namespace pegtl
    {
       if ( ! de.template match< TopRule >( true, in, std::forward< Class >( cl ) ... ) )
       {
-	 PEGTL_THROW( "pegtl: parsing input from " << in.debug_source() << " failed" );
+	 // This is not particularly informative, however the only way to trigger this is when
+	 // the dummy_debug is used, in which case the user was interested in speed, not good
+	 // error messages; when using basic_debug and trace_debug, these classes throw the
+	 // exception when the top-level rule fails.
+	 PEGTL_THROW( "pegtl: top-level parsing rule " << demangle< TopRule >() << " failed" );
       }
       return true;
    }
@@ -39,12 +43,11 @@ namespace pegtl
       }
       catch ( std::exception & e )
       {
-	 PEGTL_PRINT( "pegtl: parsing input from " << in.debug_source() << " aborted" );
 	 PEGTL_PRINT( e.what() );
       }
       catch ( ... )
       {
-	 PEGTL_PRINT( "pegtl: parsing input from " << in.debug_source() << " aborted" );
+	 PEGTL_PRINT( "pegtl: top-level parsing rule " << demangle< TopRule >() << " failed" );
       }
       return false;
    }

@@ -45,6 +45,16 @@ namespace pegtl
       return o;
    }
 
+   template< typename Location = ascii_location >
+   class string_input : public forward_input< std::string::const_iterator, Location >
+   {
+   public:
+      explicit
+      string_input( const std::string & string )
+	    : forward_input< std::string::const_iterator, Location >( string.begin(), string.end() )
+      { }
+   };
+
 } // pegtl
 
 #endif

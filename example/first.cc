@@ -17,7 +17,7 @@ namespace example
 int main( int argc, char ** argv )
 {
    for ( int i = 1; i < argc; ++i ) {
-      pegtl::basic_parse_arg_nothrow< example::first >( argv[ i ], i );
+      pegtl::basic_parse_string_nothrow< example::first >( argv[ i ] );
    }
    return 0;
 }

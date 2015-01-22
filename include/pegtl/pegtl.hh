@@ -35,11 +35,15 @@
 #include <pegtl/utilities.hh>
 
 #include <pegtl/input_generic.hh>
+#include <pegtl/input_forward.hh>
 #include <pegtl/input_string.hh>
 
-#include <pegtl/parse_counter.hh>
-#include <pegtl/parse_printer.hh>
-#include <pegtl/parse_debugger.hh>
+#include <pegtl/debug_dummy.hh>
+#include <pegtl/debug_count.hh>
+#include <pegtl/debug_print.hh>
+#include <pegtl/debug_basic.hh>
+#include <pegtl/debug_trace.hh>
+
 #include <pegtl/parse_generic.hh>
 #include <pegtl/parse_string.hh>
 

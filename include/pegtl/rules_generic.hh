@@ -148,22 +148,22 @@ namespace pegtl
 	 : failure {};
 
    template< typename Rule, typename... Rules >
-   struct sor< Rule, Rules... >
+   struct sor< Rule, Rules ... >
    {
       typedef sor key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< Rule, Rules... >();
-	 const std::string n = names< Rule, Rules... >( st, "( ", " / ", " )" );
+	 st.template insert< Rule, Rules ... >();
+	 const std::string n = names< Rule, Rules ... >( st, "( ", " / ", " )" );
 	 st.template update< sor >( n, ! st.template name< sor >().compare( 0, 11, "pegtl::sor<" ) );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 return de.template match< Rule >( de.must() & ! sizeof... ( Rules ), in, std::forward< Class >( cl ) ... ) || pegtl::sor< Rules... >::template s_match( in, de, std::forward< Class >( cl ) ... );
+	 return de.template match< Rule >( de.must() & ! sizeof... ( Rules ), in, std::forward< Class >( cl ) ... ) || pegtl::sor< Rules ... >::template s_match( in, de, std::forward< Class >( cl ) ... );
       }
    };
 
@@ -171,18 +171,25 @@ namespace pegtl
 
    template<>
    struct seq<>
-	 : success {};
+	 : success
+   {
+      template< typename Input, typename Debug, typename ... Class >
+      static bool i_match( Input &, Debug &, Class && ... )
+      {
+	 return true;
+      }
+   };
 
    template< typename Rule, typename... Rules >
-   struct seq< Rule, Rules... >
+   struct seq< Rule, Rules ... >
    {
       typedef seq key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< Rule, Rules... >();
-	 const std::string n = names< Rule, Rules... >( st, "( ", " ", " )" );
+	 st.template insert< Rule, Rules ... >();
+	 const std::string n = names< Rule, Rules ... >( st, "( ", " ", " )" );
 	 st.template update< seq >( n, ! st.template name< seq >().compare( 0, 11, "pegtl::seq<" ) );
       }
 
@@ -190,7 +197,13 @@ namespace pegtl
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
 	 marker< Input > h( in );
-	 return h( de.template match< Rule >( in, std::forward< Class >( cl ) ... ) && pegtl::seq< Rules... >::template s_match( in, de, std::forward< Class >( cl ) ... ) );
+	 return h( i_match( in, de, std::forward< Class >( cl ) ... ) );
+      }
+
+      template< typename Input, typename Debug, typename ... Class >
+      static bool i_match( Input & in, Debug & de, Class && ... cl )
+      {
+	 return de.template match< Rule >( in, std::forward< Class >( cl ) ... ) && pegtl::seq< Rules ... >::template i_match( in, de, std::forward< Class >( cl ) ... );
       }
    };
 
@@ -442,7 +455,7 @@ namespace pegtl
 	 marker< Input > p( in );
 
 	 if ( Rule::template s_match( in, de, std::forward< Class >( cl ) ... ) ) {
-	    Func::template matched< Rule >( std::string( p.here(), in.here() ), std::forward< Class >( cl ) ... );
+	    Func::matched( std::string( p.here(), in.here() ), std::forward< Class >( cl ) ... );
 	    return p( true );
 	 }
 	 return p( false );

@@ -13,7 +13,7 @@ namespace
    template< typename Rule >
    bool test_parse( const std::string & string )
    {
-      iterator_input< std::string::const_iterator, ascii_location > in( string.begin(), string.end(), "test" );
+      string_input< ascii_location > in( string );
       return dummy_parse_nothrow< Rule >( in );
    }
 

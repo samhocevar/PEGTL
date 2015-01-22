@@ -5,20 +5,17 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_PARSE_COUNTER_HH
-#define COHI_PEGTL_PARSE_COUNTER_HH
+#ifndef COHI_PEGTL_DEBUG_COUNT_HH
+#define COHI_PEGTL_DEBUG_COUNT_HH
 
 namespace pegtl
 {
    struct counter
    {
-      explicit
-      counter( const size_t rule_maximum = 1234567890, const size_t nest_maximum = 123456 )
+      counter()
 	    : m_must( true ),
 	      m_rule_counter( 0 ),
-	      m_nest_counter( 0 ),
-	      m_rule_maximum( rule_maximum ),
-	      m_nest_maximum( nest_maximum )
+	      m_nest_counter( 0 )
       { }
 
       bool must() const
@@ -50,12 +47,8 @@ namespace pegtl
 
       void enter()
       {
-	 if ( ++m_rule_counter > m_rule_maximum ) {
-	    PEGTL_THROW( "pegtl: total number of parsing expression grammar rule applications exceeds limit " << m_rule_maximum );
-	 }
-	 if ( ++m_nest_counter > m_nest_maximum ) {
-	    PEGTL_THROW( "pegtl: number of nested parsing expression grammar rule applications exceeds limit " << m_nest_maximum );
-	 }
+	 ++m_rule_counter;
+	 ++m_nest_counter;
       }
 
       void leave()
@@ -74,9 +67,6 @@ namespace pegtl
 
       size_t m_rule_counter;
       size_t m_nest_counter;      
-
-      const size_t m_rule_maximum;
-      const size_t m_nest_maximum;
    };
 
 } // pegtl

@@ -5,8 +5,8 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_PARSE_PRINTER_HH
-#define COHI_PEGTL_PARSE_PRINTER_HH
+#ifndef COHI_PEGTL_DEBUG_PRINT_HH
+#define COHI_PEGTL_DEBUG_PRINT_HH
 
 namespace pegtl
 {

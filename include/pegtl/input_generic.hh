@@ -11,164 +11,6 @@
 
 namespace pegtl
 {
-   template< typename Iterator, typename Location >
-   class forward_iterator : public std::iterator< std::forward_iterator_tag, typename Iterator::value_type >
-   {
-   public:
-      forward_iterator()
-      { }
-
-      explicit
-      forward_iterator( const Iterator & it )
-	    : m_iterator( it )
-      { }
-
-      typedef typename std::iterator_traits< Iterator >::value_type value_type;
-
-      value_type operator* () const
-      {
-	 return * m_iterator;
-      }
-      
-      const value_type * operator-> () const
-      {
-	 return m_iterator.operator->();
-      }
-
-      forward_iterator operator++ ( int )
-      {
-	 forward_iterator nrv( * this );
-	 this->operator++ ();
-	 return nrv;
-      }
-
-      const forward_iterator & operator++ ()
-      {
-	 m_location( * m_iterator );
-	 ++m_iterator;
-	 return *this;
-      }
-
-      const Location & location() const
-      {
-	 return m_location;
-      }
-      
-      bool operator== ( const forward_iterator & i ) const
-      {
-	 return m_iterator == i.m_iterator;
-      }
-
-      bool operator!= ( const forward_iterator & i ) const
-      {
-	 return m_iterator != i.m_iterator;
-      }
-
-      bool operator>= ( const forward_iterator & i ) const
-      {
-	 return m_iterator >= i.m_iterator;
-      }
-
-      void assign( const Iterator & it )
-      {
-	 m_iterator = it;
-	 m_location = Location();
-      }
-
-   private:
-      Location m_location;
-      Iterator m_iterator;
-   };
-
-   template< typename Iterator, typename Location >
-   class iterator_input : private nocopy< iterator_input< Iterator, Location > >
-   {
-   public:
-      iterator_input( const Iterator begin, const Iterator end, const std::string & source )
-	    : m_run( begin ),
-	      m_begin( begin ),
-	      m_end( end ),
-	      m_source( source )
-      { }
-
-      typedef Location location_type;
-      typedef forward_iterator< Iterator, Location > iterator;
-      typedef typename std::iterator_traits< Iterator >::value_type value_type;
-
-      bool eof() const
-      {
-	 return m_run >= m_end;
-      }
-
-      const iterator & here() const
-      {
-	 return m_run;
-      }
-
-      const iterator & end() const
-      {
-	 return m_end;
-      }
-
-      iterator_input & rewind()
-      {
-	 m_run = m_begin;
-	 return * this;
-      }
-
-      Location location() const
-      {
-	 return m_run.location();
-      }
-
-      void bump()
-      {
-	 throw_at_eof();
-	 ++m_run;
-      }
-
-      value_type peek() const
-      {
-	 throw_at_eof();
-	 return *m_run;
-      }
-
-      void jump( const iterator iter )
-      {
-	 m_run = iter;
-      }
-      
-      const std::string & debug_source() const
-      {
-	 return m_source;
-      }
-
-      std::string debug_escape( const iterator & begin, const iterator & end ) const
-      {
-	 std::string nrv;
-
-	 for ( iterator run = begin; run != end; ++run ) {
-	    escape_impl( nrv, * run );
-	 }
-	 return nrv;
-      }
-
-   protected:
-      iterator m_run;
-
-      const iterator m_begin;
-      const iterator m_end;
-
-      const std::string m_source;
-
-      void throw_at_eof() const
-      {
-	 if ( eof() ) {
-	    PEGTL_THROW( "pegtl: attempt to read beyond end of input" );
-	 }
-      }
-   };
-
    // The following classes are helper classes to simplify the implementation
    // of rules: used correctly, they make adherence to 'do not consume input
    // on failure' easy.
@@ -188,7 +30,8 @@ namespace pegtl
    class marker
    {
    public:
-      explicit marker( Input & in )
+      explicit
+      marker( Input & in )
 	    : m_input( & in ),
 	      m_iterator( in.here() )
       { }
@@ -228,7 +71,8 @@ namespace pegtl
    struct character
    {
    public:
-      explicit character( Input & in )
+      explicit
+      character( Input & in )
 	    : m_input( in ),
 	      m_value( in.peek() )
       { }

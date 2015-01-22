@@ -669,6 +669,10 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 =Changelog=
 
+*PEGTL version 0.31*
+
+  * Fixed bug in `not_at` rule regarding wrong propagation of errors.
+
 *PEGTL version 0.30*
 
   * Fixed missing template arguments in the implementation of `smart_parse_string()`.

@@ -54,12 +54,20 @@ namespace
    void simple_tests()
    {
       PEGTL_PRINT( __FUNCTION__ );
-
-      const std::string e;
-      assert( e.empty() );
-      s< eol >( e );
-      s< success >( e );
-      f< failure >( e );
+      {
+         const std::string e;
+         assert( e.empty() );
+         s< eol >( e );
+         s< success >( e );
+         f< failure >( e );
+      }
+      {
+         const std::string e( "abc" );
+         s< at< one< 'a' > > >( e );
+         f< at< one< 'b' > > >( e );
+         f< not_at< one< 'a' > > >( e );
+         s< not_at< one< 'b' > > >( e );
+      }
    }
 
    template< char A >
@@ -121,7 +129,7 @@ namespace
    void combinator_tests()
    {
       const std::string t = "abcabc";
-      
+
       s< range< 'a', 'b' > >( t );
       s< range< 'a', 'c' > >( t );
       f< range< 'A', 'B' > >( t );

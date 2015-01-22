@@ -1,17 +1,14 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
 #define COHI_PEGTL_HH
 
-#include <algorithm>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <map>
 #include <memory>
-#include <numeric>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -25,6 +22,7 @@
 #include <cxxabi.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch
+// Copyright (c) 2008 Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -331,10 +331,10 @@ namespace pegtl
 	 : pad< one< Char >, RulePadL, RulePadR > {};
 
    struct space_until_eof
-	 : until< space, eof > {};
+	 : until< eof, space > {};
 
    struct blank_until_eol
-	 : until< blank, eol > {};
+	 : until< eol, blank > {};
 
    struct shebang
 	 : ifmust< string< '#', '!' >, until< eol > > {};

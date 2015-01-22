@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 Dr. Colin Hirsch
 // Please see license.txt for license.
 
 // Include the only public header file for the PEGTL.
@@ -25,11 +25,10 @@ namespace example
 
    // Put together, this grammar is equivalent to the regular expression '^[[:alpha:]]([[:alpha:]]|[[:digit:]])*$'.
 
-   // The initial '^' is implicit because matching a rule never automatically skips input when the rule does not match.
-   // The final '$' is explicit because matching could however succeed anywhere in the middle of the input.
+   // The initial '^' is implicit; matching a rule never "just skips" input when the rule does not match.
+   // The final '$' is explicit in form of the eol-rule; otherwise matching could successfully finish earlier.
 
-   // (See the PEGTL documentation on why derivation is
-   // used, rather than a simple typedef.)
+   // See the PEGTL documentation on why grammar is defined as a struct, rather than a simple typedef.
 
 } // example
 

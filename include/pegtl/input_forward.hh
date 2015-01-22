@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 Dr. Colin Hirsch 
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH

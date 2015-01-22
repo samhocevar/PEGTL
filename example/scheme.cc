@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch
+// Copyright (c) 2008 Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #include <fstream>
@@ -12,13 +12,13 @@ namespace scheme
    // - This is as faithful to the original as possible,
    //   not even obvious redundancies have been changed;
    //   some redundancies could be easily factored out.
-   // - In some places however the order must be changed
-   //   because for CFGs backtrack when a nondeterministic
-   //   choice fails, however PEGs are always deterministic
-   //   because the order of rules implies a priority, and
-   //   a choice that was once made is never changed later.
+   // - Sometimes, however, the order of rules was changed
+   //   because while CFGs backtrack when a nondeterministic
+   //   choice fails, PEGs are always deterministic because
+   //   the order of rules implies a priority, and a choice
+   //   that was once made is never changed later.
    // - Some additions were necessary in order to replace
-   //   a sepearate tokenisation phase.
+   //   the otherwise separate tokenisation phase.
 
    using namespace pegtl::ascii;
 

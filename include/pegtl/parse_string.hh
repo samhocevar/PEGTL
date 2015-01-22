@@ -10,6 +10,8 @@
 
 namespace pegtl
 {
+   // Functions to parse input given as std::string.
+
    // Wrapper functions that add another convenience layer: instantiation
    // and initialisation of the input class. See file parse_generic.hh for
    // the wrapped functions.

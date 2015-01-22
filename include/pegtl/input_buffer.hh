@@ -192,7 +192,7 @@ namespace pegtl
    };
 
    template< typename Iterator, typename Location >
-   class buffer_iterator : public std::iterator< std::forward_iterator_tag, typename Iterator::value_type >
+   class buffer_iterator : public std::iterator< std::forward_iterator_tag, typename std::iterator_traits< Iterator >::value_type >
    {
    public:
       buffer_iterator( const size_t offset, buffer_impl< Iterator > & buffer )

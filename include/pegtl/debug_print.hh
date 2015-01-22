@@ -122,7 +122,7 @@ namespace pegtl
 
       void print_rules()
       {
-	 lazy_insert();
+	 ensure_insert();
 
 	 for ( map_type::const_iterator i = m_rules.begin(); i != m_rules.end(); ++i ) {
 	    if ( i->second.m_name == i->second.m_expr ) {
@@ -143,7 +143,7 @@ namespace pegtl
       const value_type m_top_rule_value;
 
    public:
-      void lazy_insert()
+      void ensure_insert()
       {
 	 if ( m_rules.empty() ) {
 	    m_rules.insert( std::make_pair( m_top_rule_key, m_top_rule_value ) );
@@ -162,7 +162,7 @@ namespace pegtl
       template< typename Rule >
       const value_type & find()
       {
-	 lazy_insert();
+	 ensure_insert();
 
 	 const typename map_type::const_iterator i = m_rules.find( key< Rule >() );
 

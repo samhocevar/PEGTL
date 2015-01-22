@@ -35,6 +35,9 @@ namespace pegtl
 #define PEGTL_THROW( MeSSaGe )						\
    do { std::ostringstream oss; oss << MeSSaGe; throw std::runtime_error( oss.str() ); } while( 1 )
 
+#define PEGTL_LOGGER( DeBuG, MeSSaGe )			\
+   do { std::ostringstream oss; oss << MeSSaGe; DeBuG::log( oss.str() ); } while( 0 )
+
    inline void escape_impl( std::string & result, const int i )
    {
       switch ( i )
@@ -157,8 +160,9 @@ namespace pegtl
       return demangle_impl( typeid( T ).name() );
    }
 
-   struct file_reader
+   class file_reader : private nocopy< file_reader >
    {
+   public:
       explicit
       file_reader( const std::string & filename )
 	    : m_fd( ::open( filename.c_str(), O_RDONLY ) ),
@@ -171,33 +175,91 @@ namespace pegtl
 
       ~file_reader()
       {
-	 if ( m_fd > -1 ) {
-	    ::close( m_fd );
+	 ::close( m_fd );
+      }
+
+      size_t size() const
+      {
+	 struct stat st;
+
+	 errno = 0;
+	 if ( ::fstat( m_fd, & st ) < 0 ) {
+	    PEGTL_THROW( "pegtl: unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
 	 }
+	 return size_t( st.st_size );
       }
 
       template< typename Container >
       std::string read()
       {
-	 errno = 0;
-	 struct stat st;
-
-	 if ( ::fstat( m_fd, & st ) < 0 ) {
-	    PEGTL_THROW( "pegtl: unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
-	 }
 	 Container nrv;
-	 nrv.resize( size_t( st.st_size ) );
+	 nrv.resize( size() );
 
-	 if ( st.st_size && ( ::read( m_fd, & nrv[ 0 ], nrv.size() ) != int( nrv.size() ) ) ) {
+	 errno = 0;
+	 if ( nrv.size() && ( ::read( m_fd, & nrv[ 0 ], nrv.size() ) != int( nrv.size() ) ) ) {
 	    PEGTL_THROW( "pegtl: unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
 	 }
 	 //	 PEGTL_PRINT( "pegtl: read " << st.st_size << " bytes from file " << m_fn );
 	 return nrv;
       }
 
+   public:
+      int internal_fd() const
+      {
+	 return m_fd;
+      }
+
    private:
       const int m_fd;
       const std::string m_fn;
+   };
+
+   class file_mapper : private nocopy< file_mapper >
+   {
+   public:
+      explicit
+      file_mapper( const std::string & filename )
+      {
+	 const file_reader tmp( filename );
+
+	 m_size = tmp.size();
+
+	 errno = 0;
+	 if ( intptr_t( m_data = static_cast< const char * >( ::mmap( 0, m_size, PROT_READ, MAP_FILE | MAP_PRIVATE, tmp.internal_fd(), 0 ) ) ) == -1 ) {
+	    PEGTL_THROW( "pegtl: unable mmap() file " << filename << " errno " << errno );
+	 }
+      }
+
+      ~file_mapper()
+      {
+	 ::munmap( const_cast< char * >( m_data ), m_size );
+      }
+      
+      size_t size() const
+      {
+	 return m_size;
+      }
+
+      const char * data() const
+      {
+	 return m_data;
+      }
+
+      typedef const char * iterator;
+
+      iterator begin() const
+      {
+	 return m_data;
+      }
+
+      iterator end() const
+      {
+	 return m_data + m_size;
+      }
+
+   private:
+      const char * m_data;
+      size_t m_size;
    };
 
    inline std::string read_string( const std::string & filename )
@@ -264,12 +326,6 @@ namespace pegtl
 	 }
       }         
       return nrv;             
-   }
-
-   template< typename C, typename T >
-   bool is_in( const T & t, const C & c )
-   {
-      return c.find( t ) != c.end();
    }
 
 } // pegtl

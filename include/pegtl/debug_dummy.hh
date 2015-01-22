@@ -17,8 +17,14 @@ namespace pegtl
       { }
 
       template< typename TopRule >
+      explicit
       dummy_debug( const tag< TopRule > & )
       { }
+
+      static void log( const std::string & message )
+      {
+	 std::cerr << message << std::endl;
+      }
 
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )

@@ -43,11 +43,11 @@ namespace pegtl
       }
       catch ( std::exception & e )
       {
-	 PEGTL_PRINT( e.what() );
+	 PEGTL_LOGGER( Debug, e.what() );
       }
       catch ( ... )
       {
-	 PEGTL_PRINT( "pegtl: top-level parsing rule " << demangle< TopRule >() << " failed" );
+	 PEGTL_LOGGER( Debug, "pegtl: top-level parsing rule " << demangle< TopRule >() << " failed" );
       }
       return false;
    }

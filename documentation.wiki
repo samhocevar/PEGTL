@@ -23,16 +23,18 @@ PEGTL version 0.17 is ready, and should work "just fine"; this version adds supp
   * Produces very efficient parsers.
   * Arbitrary user-defined parser state.
   * User-defined input abstractions, supplied:
-    # strings (and files),
+    # files via mmap(2),
+    # strings (and files in strings),
     # ranges of forward iterators, and
     # input iterators, w/automatic minimal buffering.
   * User-defined debug abstractions, supplied:
     # no diagnostics,
     # diagnostics on error,
-    # no diagnostics with fall-back on error,
+    # two-pass combination,
     # on error plus complete trace of all rule invocations.
   * Expressions/rules and actions embedded in simple C++ code.
   * Diagnostics with (nearly-)pretty-printing of grammar rules.
+  * User-defined logging of diagnostic messages, defaults to cerr.
   * (Some grammar optimisations and checks at compile-time.)
   * Examples, inluding PEGTL grammar for [http://www.r6rs.org/ R6RS] Scheme syntax.
 
@@ -50,21 +52,25 @@ The reader should be comfortable with CFGs, (E)BNF and/or PEGs, and have a reaso
 
 ===Limitations===
 
+This documentation is a bit scanty, it will be significantly extended once the core functionality of the library stabilises significantly as to not require constant rewriting.
+
 The PEGTL inherits the general limitation of PEGs of not being able to use left-recursive rules.
-More generally, any recursion/iteration that can recurse/iterate without making progress, i.e. without consuming any input, must be avoided.
-With a little exercise it is however rather easy to recognise, and rewrite, grammars that exhibit this problem.
+More generally, any recursion/iteration that can recurse/iterate without making progress, i.e. without consuming any input, *must* be avoided.
+With a little exercise, it is easy to recognise, and rewrite, grammars that exhibit this problem.
 
 The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time polymorphism, i.e. interface classes and virtual functions) where grammars are created mainly by instantiating appropriate class templates.
 It might therefore not be well suited for applications that create and/or change grammars at run-time.
-Support for run-time polymorphism might be included in the future if required.
 
 The PEGTL currently has explicit support ASCII input data only.
 Support for UTF-8 and raw binary data is likely to be included in the near future.
 Other character sets and encodings will probably never be supported.
 
+The support for input iterators currently gives error positions in byte offsets (all other input classes produce line and column numbers).
+This will probably be fixed in the near future.
+
 ===Requirements===
 
-The PEGTL some C++0x features and requires GCC 4.3 with `-std=gnu++0x` to compile.
+The PEGTL uses some C++0x features and requires GCC 4.3 with `-std=gnu++0x` to compile.
 It was developed under Mac OS X, but should work on any Linux or Unix system:
 Only headers and libraries from GCC 4.3 and the SUSv3 standard are used.
 
@@ -434,6 +440,13 @@ A better, equivalent, expression is the following.
 
 
 ===Changelog===
+
+*PEGTL version 0.18*
+
+  * Added parser functions `*parse_forward*` for forward iterators (completeness).
+  * Renamed parser functions for input iterators to `*parse_input*` (consistency).
+  * Added parser functions `*parse_file*` for files, implemented with mmap(2) (necessity).
+  * Added initial support for customised logging of error messages (flexibility).
 
 *PEGTL version 0.17*
 

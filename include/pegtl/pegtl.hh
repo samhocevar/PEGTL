@@ -29,6 +29,7 @@
 #include <stdio.h>
 
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <sys/types.h>
 
 #include <pegtl/constants.hh>
@@ -46,8 +47,9 @@
 #include <pegtl/debug_trace.hh>
 
 #include <pegtl/parse_generic.hh>
-#include <pegtl/parse_buffer.hh>
+#include <pegtl/parse_iterator.hh>
 #include <pegtl/parse_string.hh>
+#include <pegtl/parse_filename.hh>
 
 #include <pegtl/rules_generic.hh>
 #include <pegtl/rules_action.hh>

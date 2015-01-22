@@ -11,6 +11,8 @@
 
 namespace pegtl
 {
+   // Classes for input given as range of forward iterators.
+
    // Class marker remembers (marks) the current position in the input; a
    // 'commit' is a nop, a 'rollback' rewinds to the initial position; the
    // 'Must' flag is used to optimise: if a rule must succeed (or else an
@@ -70,10 +72,8 @@ namespace pegtl
       const typename Input::iterator m_iterator;
    };
 
-   // Classes for input given as range of forward iterators.
-
    template< typename Iterator, typename Location >
-   class forward_iterator : public std::iterator< std::forward_iterator_tag, typename Iterator::value_type >
+   class forward_iterator : public std::iterator< std::forward_iterator_tag, typename std::iterator_traits< Iterator >::value_type >
    {
    public:
       forward_iterator()
@@ -189,7 +189,7 @@ namespace pegtl
       value_type peek() const
       {
 	 throw_at_eof();
-	 return *m_run;
+	 return * m_run;
       }
 
       void jump( const iterator iter )

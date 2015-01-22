@@ -296,9 +296,17 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      std::ifstream ifs( argv[ arg ], std::ios_base::in | std::ios_base::binary );
-      std::noskipws( ifs );  // Work around broken (?) library design that skips ws even on files opened as binary.
-      if ( pegtl::basic_parse_buffer_nothrow< scheme::r6rs >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() ) ) {
+      // 2.8 seconds with -O1
+      //      std::ifstream ifs( argv[ arg ], std::ios_base::in | std::ios_base::binary );
+      //      std::noskipws( ifs );  // Work around broken (?) library design that skips ws even on files opened as binary.
+      //      if ( pegtl::basic_parse_input_nothrow< scheme::r6rs >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() ) ) {
+
+      // 2.0 seconds with -O1
+      //      if ( pegtl::basic_parse_file_nothrow< scheme::r6rs >( argv[ arg ] ) ) {
+
+      // 0.4 seconds with -O1
+      // 0.35 seconds with -O3
+      if ( pegtl::smart_parse_file_nothrow< scheme::r6rs >( false, argv[ arg ] ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
       }
       else {

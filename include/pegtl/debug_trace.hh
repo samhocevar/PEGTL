@@ -11,30 +11,30 @@
 
 namespace pegtl
 {
-   template< typename Rule, typename Input >
-   struct trace_guard : private basic_guard< Rule, Input >
+   template< typename Rule, typename Input, typename Debug >
+   struct trace_guard : private basic_guard< Rule, Input, Debug >
    {
    public:
       trace_guard( Input & in, counter & t, printer & p )
-	    : basic_guard< Rule, Input >( in.location(), t, p ),
+	    : basic_guard< Rule, Input, Debug >( in.location(), t, p ),
 	      m_input( in ),
 	      m_begin( in.here() ),
 	      m_rule_counter( t.rule() )
       {
-	 print_debug( "start  " );
+	 trace( "start  " );
       }
 
       ~trace_guard()
       {
 	 const char * const msgs[] = { "failure", "success", "unwind " };
-	 print_debug( msgs[ this->m_result ] );
+	 trace( msgs[ this->m_result ] );
       }
 
       bool operator() ( const bool result, const bool must )
       {
 	 this->m_result = result;
-	 print_debug( "result " );
-	 return basic_guard< Rule, Input >::operator() ( result, must );
+	 trace( "result " );
+	 return basic_guard< Rule, Input, Debug >::operator() ( result, must );
       }
 
    private:
@@ -43,9 +43,9 @@ namespace pegtl
 
       const size_t m_rule_counter;
 
-      void print_debug( const char * msg )
+      void trace( const char * msg )
       {
-	 PEGTL_PRINT( "pegtl: " << msg << " flags " << this->m_result << " rule " << std::setw( 4 ) << m_rule_counter << " nest " << std::setw( 3 ) << this->m_counter.nest() << " at " << m_input.location() << " expression " << this->m_printer.template rule< Rule >() << " input \"" << m_input.debug_escape( m_begin, m_input.here() ) << "\"" );
+	 PEGTL_LOGGER( Debug, "pegtl: " << msg << " flags " << this->m_result << " rule " << std::setw( 4 ) << m_rule_counter << " nest " << std::setw( 3 ) << this->m_counter.nest() << " at " << m_input.location() << " expression " << this->m_printer.template rule< Rule >() << " input \"" << m_input.debug_escape( m_begin, m_input.here() ) << "\"" );
       }
    };
 
@@ -53,6 +53,7 @@ namespace pegtl
    struct trace_debug
    {
       template< typename TopRule >
+      explicit
       trace_debug( const tag< TopRule > & help, const bool trace = true )
 	    : m_trace( trace ),
 	      m_printer( help )
@@ -68,15 +69,20 @@ namespace pegtl
 	 m_trace = trace;
       }
 
+      static void log( const std::string & message )
+      {
+	 std::cerr << message << std::endl;
+      }
+
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )
       {
 	 if ( m_trace ) {
-	    trace_guard< Rule, Input > d( in, m_counter, m_printer );
+	    trace_guard< Rule, Input, trace_debug > d( in, m_counter, m_printer );
 	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
 	 else {
-	    basic_guard< Rule, Input > d( in.location(), m_counter, m_printer );
+	    basic_guard< Rule, Input, trace_debug > d( in.location(), m_counter, m_printer );
 	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
       }

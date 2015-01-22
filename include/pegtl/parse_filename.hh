@@ -10,6 +10,7 @@
 
 namespace pegtl
 {
+#if !_MSC_VER
    template< typename Location >
    struct file_input
 	 : private file_mapper,
@@ -67,6 +68,7 @@ namespace pegtl
       file_input< Location > in( filename );
       smart_parse< TopRule >( trace, in, std::forward< States >( st ) ... );
    }
+#endif
 
 } // pegtl
 

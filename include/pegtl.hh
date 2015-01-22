@@ -17,15 +17,21 @@
 #include <vector>
 
 #include <assert.h>
-#include <cxxabi.h>
+#if !_MSC_VER
+#  include <cxxabi.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <unistd.h>
+#if !_MSC_VER
+#  include <unistd.h>
+#endif
 #include <stdio.h>
 
 #include <sys/stat.h>
-#include <sys/mman.h>
+#if !_MSC_VER
+#  include <sys/mman.h>
+#endif
 #include <sys/types.h>
 
 #include <pegtl/constants.hh>

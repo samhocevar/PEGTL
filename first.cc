@@ -3,6 +3,8 @@
 
 #include <pegtl.hh>
 
+// The first example from the documentation.
+
 namespace
 {
    using namespace pegtl;

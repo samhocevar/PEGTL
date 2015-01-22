@@ -58,6 +58,13 @@ namespace pegtl
 	      m_end( m_string.end() )
       { }
 
+      input( const std::string & string, const int )
+	    : m_string( string ),
+	      m_debug( "command line argument" ),
+	      m_run( m_string ),
+	      m_end( m_string.end() )
+      { }
+      
       input( const std::string & string, const std::string & source )
 	    : m_string( string ),
 	      m_debug( source ),

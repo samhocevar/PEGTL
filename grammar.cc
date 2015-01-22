@@ -3,6 +3,8 @@
 
 #include <pegtl.hh>
 
+// The first non-trivial grammar used during development and debugging of the library.
+// This grammar recognises a subset of parsing expression grammar rules.
 
 namespace pegtl
 {

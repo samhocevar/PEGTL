@@ -124,7 +124,7 @@ namespace pegtl
 	 : until< space, eol_or_eof > {};
 
    struct shebang
-	 : ifmust< text< '#', '!' >, until_eol_or_eof > {};
+	 : ifmust< string< '#', '!' >, until_eol_or_eof > {};
 
 } // pegtl
 

@@ -78,10 +78,18 @@ namespace pegtl
 
 
    template< typename Rule, typename Debug = basic_debug, typename ... Class >
+   bool parse( const std::string & i, const int d, Class && ... cl )
+   {
+      input in( i, d );
+      return parser< Rule, Debug >()( in, std::forward< Class >( cl ) ... );
+   }
+
+
+   template< typename Rule, typename Debug = basic_debug, typename ... Class >
    bool parse( const std::string & i, const std::string & d, Class && ... cl )
    {
       input in( i, d );
-      return parser< Rule, Debug >()( in );
+      return parser< Rule, Debug >()( in, std::forward< Class >( cl ) ... );
    }
 
 
@@ -89,7 +97,7 @@ namespace pegtl
    bool parse( const bool trace, const std::string & i, const std::string & d, Class && ... cl )
    {
       input in( i, d );
-      return parser< Rule, Debug >( trace )( in );
+      return parser< Rule, Debug >( trace )( in, std::forward< Class >( cl ) ... );
    }
 
 } // pegtl

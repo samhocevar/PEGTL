@@ -65,7 +65,7 @@ namespace utils
 	    break;
 	 default: {
 	    char tmp[ 12 ];
-	    ::snprintf( tmp, sizeof( tmp ), "\\%d", i );
+	    ::snprintf( tmp, sizeof( tmp ), "\\%03d", i );
 	    result += tmp;
 	 }  break;
       }
@@ -157,7 +157,55 @@ namespace utils
    {
       return demangle_impl( typeid( T ).name() );
    }
-   
+
+
+   template< class S > S string_to_signed( const std::string & value )
+   {
+      S nrv = 0;
+      S tmp;
+         
+      if ( value.empty() ) {
+	 UTILS_THROW( "string-to-integer conversion failed for empty string" );
+      }
+      unsigned run = 0;
+         
+      bool neg = value[ run ] == '-';
+         
+      if ( value[ run ] == '+' || value[ run ] == '-' ) {
+	 if ( value.size() < 2 ) {
+	    UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- sign without number" );
+	 }
+	 else {
+	    ++run;
+	 }
+      }
+      if ( ! isdigit( value[ run ] ) ) {
+	    UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- no digits" );
+      }
+      for ( ; ( run < value.size() ) && ::isdigit( value[ run ] ); ++run )
+      {
+	 if ( ( tmp = nrv * 10 ) / 10 != nrv ) {
+	    UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- integer overflow" );
+	 }
+	 if ( neg ) {
+	    if ( ( nrv = tmp - ( value[ run ] - '0' ) ) + ( value[ run ] - '0' ) != tmp ) {
+	       UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- integer overflow" );
+	    }
+	 }
+	 if ( ! neg ) {
+	    if ( ( nrv = tmp + ( value[ run ] - '0' ) ) - ( value[ run ] - '0' ) != tmp ) {
+	       UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- integer overflow" );
+	    }
+	 }
+      }
+      for ( ; run < value.size(); ++run ) {
+	 if ( ! ::isspace( value[ run ] ) ) {
+	    UTILS_THROW( "string-to-integer conversion failed for string \"" << value << "\" -- trailing garbage" );
+	 }
+      }         
+      return nrv;             
+   }
+
 } // utils
 
 #endif

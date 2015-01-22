@@ -3,11 +3,17 @@
 
 #include <pegtl.hh>
 
-#include <boost/lexical_cast.hpp>
+// The first program that was used for debugging in the early phase of PEGTL development.
+// It evaluates each command line argument as arithmetic expression consisting of
+// - integers with optional sign,
+// - the 5 basic arithmetic operations,
+// - grouping brackets.
+// For example input "3 * ( -7 + 9)" yields result 6.
 
-
-namespace pegtl
+namespace calculator
 {
+   using namespace pegtl;
+
    struct first_action
    {
       template< typename Rule >
@@ -18,47 +24,37 @@ namespace pegtl
       }
    };
 
-
    template< typename Rule >
    struct write_first
 	 : action< Rule, first_action > {};
 
-
-   template< typename Rule >
-   struct write_cast
+   struct cast_action
    {
-      static std::string key()
+      template< typename Rule, typename Signed >
+      static void matched( const std::string & m, Signed & s )
       {
-	 return typeid( write_cast ).name();
-      }
-
-      template< typename Print >
-      static void s_print( Print & st )
-      {
-	 st.template insert< Rule >();
-      }
-
-      template< typename Input, typename Debug, typename Output >
-      static bool s_match( Input & in, Debug & de, Output & cl )
-      {      
-	 position< Input > p( in );
-	 
-	 if ( ! de.template match< Rule >( in ) ) {
-	    return p( false );
-	 }
-	 cl = boost::lexical_cast< Output >( std::string( p.here(), in.here() ) );
-	 return p( true );
+	 s = utils::string_to_signed< Signed >( m );
       }
    };
 
+   template< typename Rule >
+   struct write_cast
+	 : action< Rule, cast_action > {};
 
-   typedef seq< white_star, write_cast< plus< digit > > > read_number;
+   struct read_number
+	 : seq< white_star, write_cast< seq< opt< one_list< '+', '-' > >, plus< digit > > > > {};
 
-   typedef seq< white_star, one< '(' > > read_open;
-   typedef seq< white_star, one< ')' > > read_close;
+   struct read_open
+	 : seq< white_star, one< '(' > > {};
 
-   typedef one_list< '+', '-' > read_line_op;
-   typedef one_list< '*', '/', '%' > read_dot_op;
+   struct read_close
+	 : seq< white_star, one< ')' > > {};
+
+   struct read_line_op
+	 : one_list< '+', '-' > {};
+
+   struct read_dot_op
+	 : one_list< '*', '/', '%' > {};
 
    struct read_expr;
 
@@ -129,28 +125,18 @@ namespace pegtl
    struct read_calc
 	 : seq< read_expr, white_star, eof > {};
 
-} // pegtl
+} // calculator
 
 int main( int argc, char ** argv )
 {
-   for ( int arg = 1; arg < argc; ++arg )
-   {
-      try
-      {
-	 int result = 0;
-	 pegtl::input input( argv[ arg ], "command line" );
-	 pegtl::parser< pegtl::read_calc, pegtl::basic_debug > parser;
+   for ( int arg = 1; arg < argc; ++arg ) {
+      int result = 0;
 	 
-	 if ( parser( input, result ) ) {
-	    std::cerr << "input " << argv[ arg ] << " result " << result << "\n";
-	 }
-	 else {
-	    std::cerr << "input " << argv[ arg ] << " invalid\n";
-	 }
+      if ( pegtl::parse< calculator::read_calc >( argv[ arg ], "command line agument", result ) ) {
+	 std::cerr << "input " << argv[ arg ] << " result " << result << "\n";
       }
-      catch ( std::exception & e )
-      {
-	 UTILS_PRINT( "error: " << e.what() );
+      else {
+	 std::cerr << "input " << argv[ arg ] << " invalid\n";
       }
    }
    return 0;

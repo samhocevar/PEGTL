@@ -2,7 +2,7 @@
 
 ==Parsing Expression Grammar Template Library==
 
-Copyright (c) 2008 Colin Hirsch
+  "Don't Parse" -- Dan J. Bernstein
 
 
 =Introduction=
@@ -15,7 +15,7 @@ PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://
 
 ===Status===
 
-This library is not yet finished.
+*This library is not finished.*
 
 The actual parsing rules are ready, however the input abstraction needs to be cleaned up, testcases need to be written, the included examples need to be extended, and the documentation completed.
 
@@ -71,9 +71,7 @@ Support for very large inputs might be included in the future.
 ===Requirements===
 
 The PEGTL uses feaatures from C++0x and requires GCC 4.3.0, or later, to compile.
-Only headers and libraries from C99, C++98, TR1, and/or C++0x are used by the PEGTL.
-
-The PEGTL was developed and tested with GCC 4.3.0 under Mac OS X 10.5.2 on a dual-core MacBook Pro.
+Only headers and libraries from C99, C++98, TR1, and/or C++0x are used.
 
 ===Installation===
 
@@ -118,6 +116,10 @@ The rules `alpha` and `digit` are provided and accept a single ASCII letter, or 
 The `seq` template concatenates expressions, `sor` is the ordered choice, and `star` the usual repetition.
 The _rule_ can be read as "an alpha, followed by zero-or-more characters that can be either alphas or digits", i.e. the regular expression "[a-zA-Z][a-zA-Z0-9]*".
 
+Note that the rule `first` could also be defined as a `typedef`, rather than a `struct`, i.e. as `typedef seq< alpha, star< sor< alpha, digit > > > first;`.
+For the resulting grammar there is no difference whether a `typedef` or a `struct` is used to define new rules.
+However it is recommended to _not_ use `typedef` so that the `struct`'s name can help understanding the grammar rules when included in diagnostic messages.
+
 ===Actual Parsing===
 
 Once _rule_ is defined, it can be used in conjunction with an _input_ and a _debug_ to actually parse something.
@@ -158,12 +160,74 @@ It is declared as follows.
 
 The return value indicates whether parsing was successful.
 
+
+
 ===State and Actions===
 
 A _parser_ can be invoked with arbitrary _state_ that is recursively passed from _rule_ invocation to _rule_ invocation.
 
 
 =Combinators=
+
+===opt< Rule >===
+
+The `opt` template corresponds to the "optional expression", or the "?"-operator.
+
+  * Always succeeds.
+  * Consumes as much input as `Rule` consumes.
+
+===star< Rule >===
+
+The `star` template corresponds to the "zero-or-more repetition expression", the Kleene-star, or the "*"-operator.
+
+  * Always succeeds.
+
+===plus< Rule >===
+
+The `plus` template corresponds to the "one-or-more repetition expression", or the "+"-operator.
+
+  * Succeeds iff `Rule` succeeds.
+
+===sor< Rule, ... >===
+
+The `sor` variadic template corresponds to the "choice expression", or the "/"-operator.
+
+  * Succeeds iff at least one of the given rules succeed.
+  * The rules are all invoked at the same input position.
+  * Consumes exactly the input that the first successful rule consumes.
+
+===seq< Rule, ... >===
+
+The `seq` variadic template corresponds to the "sequence expression", which is written by concatenation of expressions separated by a space, and therefore does not have a symbol.
+
+  * Succeeds iff all of the given rules succeed.
+  * The rules are invoked in sequence, each rule continuing at the first input position not handled by the previous rule (or eof).
+
+===at< Rule >===
+
+The `at` template corresponds to the positive "syntactic predicate", or the "&"-operator.
+
+  * Succeeds iff `Rule` succeeds.
+  * Does not consume any input.
+
+===not_at< Rule >===
+
+The `not_at` template corresponds to the negative "syntactic predicate", or the "!"-operator.
+
+  * Succeeds iff `Rule` does not succeed.
+  * Does not consume any input.
+
+===must< Rule >===
+
+The `must` template invokes `Rule`, but transforms a failure of `Rule` into an exception.
+
+  * Either succeeds or throws an exception.
+  * Consumes as much input as `Rule` consumes.
+
+
+=Atomic Rules=
+
+This list might be incomplete; see the PEGTL source for all provided rules.
 
 ===eof===
 
@@ -187,66 +251,6 @@ Read any single character from the input.
   * Always fails (but does not itself throw an exception).
   * Does not consume any input.
 
-===opt< Rule >===
-
-The 'opt' template corresponds to the "optional expression", or the "?"-operator.
-
-  * Always succeeds.
-  * Consumes as much input as 'Rule' consumes.
-
-===star< Rule >===
-
-The 'star' template corresponds to the "zero-or-more repetition expression", the Kleene-star, or the "*"-operator.
-
-  * Always succeeds.
-
-===plus< Rule >===
-
-The 'plus' template corresponds to the "one-or-more repetition expression", or the "+"-operator.
-
-  * Succeeds iff 'Rule' succeeds.
-
-===sor< Rule, ... >===
-
-The 'sor' variadic template corresponds to the "choice expression", or the "/"-operator.
-
-  * Succeeds iff at least one of the given rules succeed.
-  * The rules are all invoked at the same input position.
-  * Consumes exactly the input that the first successful rule consumes.
-
-===seq< Rule, ... >===
-
-The 'seq' variadic template corresponds to the "sequence expression", which is written by concatenation of expressions separated by a space, and therefore does not have a symbol.
-
-  * Succeeds iff all of the given rules succeed.
-  * The rules are invoked in sequence, each rule continuing at the first input position not handled by the previous rule (or eof).
-
-===at< Rule >===
-
-The 'at' template corresponds to the positive "syntactic predicate", or the "&"-operator.
-
-  * Succeeds iff 'Rule' succeeds.
-  * Does not consume any input.
-
-===not_at< Rule >===
-
-The 'not_at' template corresponds to the negative "syntactic predicate", or the "!"-operator.
-
-  * Succeeds iff 'Rule' does not succeed.
-  * Does not consume any input.
-
-===must< Rule >===
-
-The 'must' template invokes 'Rule', but transforms a failure of 'Rule' into an exception.
-
-  * Either succeeds or throws an exception.
-  * Consumes as much input as 'Rule' consumes.
-
-
-=Atomic Rules=
-
-This list might be incomplete; see the PEGTL source for all provided rules.
-
 ===one< Char >===
 
 Read one given character from the input.
@@ -254,9 +258,9 @@ Read one given character from the input.
   * Succeeds iff next input character is equal to `Char`.
   * Consumes one character.
 
-===text< Char, ... >===
+===string< Char, ... >===
 
-Read a given text or string from the input.
+Read a string from the input.
 
 Semantically equivalent to `seq< one< Char >, ... >`.
 
@@ -294,7 +298,7 @@ Accepts one line-feed character.
 
 ===eol_or_eof===
 
-Equivalent to 'sor< eof, eol >'.
+Equivalent to `sor< eof, eol >`.
 
 ===space===
 
@@ -306,56 +310,61 @@ Accepts one space, vertical or horizontal tab, line-feed or carriage-return.
 
 ===digit===
 
-Accepts regular expression '[0-9]'.
+Accepts regular expression `[0-9]`.
 
 ===lower===
 
-Accepts regular expression '[a-z]'.
+Accepts regular expression `[a-z]`.
 
 ===upper===
 
-Accepts regular expression '[A-Z]'.
+Accepts regular expression `[A-Z]`.
 
 ===alpha===
 
-Accepts regular expression '[a-zA-Z]'.
+Accepts regular expression `[a-zA-Z]`.
 
 ===ident===
 
-Accepts regular expression '[a-zA-Z_][a-zA-Z0-9_]*'.
+Accepts regular expression `[a-zA-Z_][a-zA-Z0-9_]*`.
 
 ===until1< Cond >===
 
-Semantically equivalent to the recursive 'Rule = sor< at< Cond >, seq< any, Rule > >', but implemented without recursion.
+Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< any, Rule > >`, but implemented without recursion.
 
 ===until< What, Cond >===
 
-Semantically equivalent to the recursive 'Rule = sor< at< Cond >, seq< What, Rule > >', but implemented without recursion.
+Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< What, Rule > >`, but implemented without recursion.
 
 ===ifthen< Cond, Then >===
 
-Semantically equivalent to 'sor< seq< Cond, Then >, not_at< Cond > >', except for invoking 'Cond' only once.
+Semantically equivalent to `sor< seq< Cond, Then >, not_at< Cond > >`, except for invoking `Cond` only once.
 
 ===ifmust< Cond, Then >===
 
-Semantically equivalent to 'seq< Cond, must< Then > >'.
+Semantically equivalent to `seq< Cond, must< Then > >`.
 
 ===ifthenelse< Cond, Then, Else >===
 
-Semantically equivalent to 'sor< seq< Cond, Then >, seq< not_at< Cond >, Else > >', except for invoking 'Cond' only once.
+Semantically equivalent to `sor< seq< Cond, Then >, seq< not_at< Cond >, Else > >`, except for invoking `Cond` only once.
 
 ===ifmust< Cond, Then >===
 
-Semantically equivalent to 'sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > >', except for invoking 'Cond' only once.
+Semantically equivalent to `sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > >`, except for invoking `Cond` only once.
 
 ===pad< Rule, PadL, PadR >===
 
-Semantically equivalent to 'seq< star< PadL >, Rule, star< PadR > >'; 'PadR' defaults to 'PadL'.
+Semantically equivalent to `seq< star< PadL >, Rule, star< PadR > >`; `PadR` defaults to `PadL`.
 
 
 =Advanced=
 
 This section covers advanced topics and library internals.
+
+===Examples===
+
+The PEGTL distribution archive contains C++ implementation files that were used during development and debugging of the library itself.
+They are included in order to serve as advanced examples on how to create grammars, and in particular how to perform actions while parsing.
 
 ===Optimisations===
 
@@ -376,17 +385,40 @@ The PEGTL often uses guard-objects in its implementation, which is good C++ styl
 To prevent a stack overflow, grammars should prefer to use rules for iteration, rather than recursive rules, wherever possible.
 
 This means, in particular, to avoid "head and tail"-style recursion which is used in many functional programming languages.
-For example, to express that a 'foo' is either empty, or a 'bar' followed by a 'foo', we could write the grammar as follows.
+For example, to express that a `foo` is either empty, or a `bar` followed by a `foo`, we could write the grammar as follows.
 
 {{{
    struct foo
    	 : sor< eof, seq< bar, foo > > {};
 }}}
 
-Here every recursive call of 'foo' creates a new stack-frame.
+Here every recursive call of `foo` creates a new stack-frame.
 A better, equivalent, expression is the following.
 
 {{{
    struct foo
          : until< bar, eof > {};
 }}}
+
+
+===License===
+
+Copyright (c) 2008 Dr. Colin Hirsch
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

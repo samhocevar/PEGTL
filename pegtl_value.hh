@@ -183,11 +183,11 @@ namespace pegtl
 	 : at< one_range< C, D > > {};
 
 
-   template< int... Chars > struct text;
+   template< int... Chars > struct string;
 
 
    template<>
-   struct text<> : success
+   struct string<> : success
    {
       template< typename Print >
       static void d_i( std::ostream &, Print & )
@@ -198,11 +198,11 @@ namespace pegtl
 
 
    template< int Char, int... Chars >
-   struct text< Char, Chars... >
+   struct string< Char, Chars... >
    {
       static std::string key()
       {
-	 return typeid( text ).name();
+	 return typeid( string ).name();
       }
 
       template< typename Print >
@@ -210,7 +210,7 @@ namespace pegtl
       {
 	 st.template insert< one< Char > >();
 	 o << utils::escape( Char );
-	 text< Chars... >::d_i( o, st );
+	 string< Chars... >::d_i( o, st );
       }
       
       template< typename Print >
@@ -219,20 +219,20 @@ namespace pegtl
 	 std::ostringstream o;
 	 d_i( o, st );
 	 const std::string n = std::string( "\"" ) + o.str() + "\"";
-	 st.template update< text >( n, true );
+	 st.template update< string >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 return de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && text< Chars... >::template s_match( in, std::forward< Class >( cl ) ... );
+	 return de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, std::forward< Class >( cl ) ... );
       }
    };
 
 
    template< int Char, int... Chars >
-   struct at_text
-	 : at< text< Char, Chars... > > {};
+   struct at_string
+	 : at< string< Char, Chars... > > {};
 
 } // pegtl
 

@@ -42,7 +42,7 @@ namespace pegtl
       template< typename Print >
       static void s_print( Print & st )
       {
-	 st.template insert< Rule >();
+	 st.template insert< Rule >( true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
@@ -51,8 +51,9 @@ namespace pegtl
 	 position< Input > p( in );
 	 if ( Rule::template s_match( in, de, std::forward< Class >( cl ) ... ) ) {
 	    Func::template matched< Rule >( std::string( p.here(), in.here() ), std::forward< Class >( cl ) ... );
+	    return p( true );
 	 }
-	 return false;
+	 return p( false );
       }
    };
 

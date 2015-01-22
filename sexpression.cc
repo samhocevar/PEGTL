@@ -54,7 +54,7 @@ namespace sexpr
 
    // ... and have one atomic type of node, a token that stores
    // a string and some debug information; the debug information
-   // will contain the position in the input where the token value
+   // will contain the marker in the input location the token value
    // was read (not yet implemented).
 
    struct token_node
@@ -83,10 +83,7 @@ namespace sexpr
    template< typename Head, typename Tail >
    struct make_cons
    {
-      static std::string key()
-      {
-	 return typeid( make_cons ).name();
-      }
+      typedef seq< Head, Tail > key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -97,7 +94,7 @@ namespace sexpr
       template< typename Input, typename Debug >
       static bool s_match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
 
 	 std::shared_ptr< node_base > car;
 	 std::shared_ptr< node_base > cdr;
@@ -160,7 +157,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       std::shared_ptr< sexpr::node_base > result;
-      if ( pegtl::parse< sexpr::read_file >( pegtl::read_file( argv[ arg ] ), argv[ arg ], result ) ) {
+      if ( pegtl::trace_parse_file< sexpr::read_file >( true, argv[ arg ], result ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
       }
       else {

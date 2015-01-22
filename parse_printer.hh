@@ -5,13 +5,43 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_PRINTER_HH
-#define COHI_PEGTL_PRINTER_HH
+#ifndef COHI_PEGTL_PARSE_PRINTER_HH
+#define COHI_PEGTL_PARSE_PRINTER_HH
 
 namespace pegtl
 {
+   template< typename... Rules > struct insert_help;
+
+   template<>
+   struct insert_help<>
+   {
+      template< typename Print >
+      static void insert( Print &, const bool )
+      { }
+   };
+
+   template< typename Rule, typename... Rules >
+   struct insert_help< Rule, Rules... >
+   {
+      template< typename Print >
+      static void insert( Print & st, const bool force )
+      {
+	 st.template insert_impl< Rule >( force );
+	 insert_help< Rules... >::insert( st, force );
+      }
+   };
+
    struct printer
    {
+      typedef void ( * inserter ) ( printer & );
+
+      template< typename TopRule >
+      printer( const tag< TopRule > & )
+	    : m_top_inserter( & TopRule::template s_insert< printer > ),
+	      m_top_rule_key( key< TopRule >() ),
+	      m_top_rule_value( value< TopRule >() )
+      { }
+
       struct value_type
       {
 	 value_type()
@@ -30,23 +60,20 @@ namespace pegtl
       typedef std::map< key_type, value_type > map_type;
 
       template< typename Rule >
-      key_type key() const
+      static key_type key()
       {
-	 return Rule::key();
+	 return typeid( typename Rule::key_type ).name();
       }
 
       template< typename Rule >
-      const value_type & find() const
+      static value_type value()
       {
-	 const map_type::const_iterator i = m_rules.find( key< Rule >() );
-	 if ( i == m_rules.end() ) {
-	    return m_value_type;
-	 }
-	 return i->second;
+	 const std::string d = demangle< Rule >();
+	 return value_type( d, d );
       }
 
       template< typename Rule >
-      std::string rule() const
+      std::string rule()
       {
 	 const value_type & e = find< Rule >();
 
@@ -59,16 +86,16 @@ namespace pegtl
       }
 
       template< typename Rule >
-      const std::string & name() const
+      const std::string & name()
       {
 	 return find< Rule >().m_name;
       }
 
       template< typename Rule >
-      const std::string & expr() const
+      const std::string & expr()
       {
 	 return find< Rule >().m_expr;
-      }
+      }      
 
       template< typename... Rules >
       void insert( const bool force = false )
@@ -93,8 +120,10 @@ namespace pegtl
 	 m_rules[ key< Rule >() ] = value_type( name, expr );
       }
 
-      void print_rules() const
+      void print_rules()
       {
+	 lazy_insert();
+
 	 for ( map_type::const_iterator i = m_rules.begin(); i != m_rules.end(); ++i ) {
 	    if ( i->second.m_name == i->second.m_expr ) {
 	       PEGTL_PRINT( "RULE1 " << i->second.m_name );
@@ -107,36 +136,40 @@ namespace pegtl
 
    private:
       map_type m_rules;
-      const value_type m_value_type;      
+      const value_type m_default_value;
 
-      template< typename... Rules > struct insert_help;
+      const inserter m_top_inserter;
+      const key_type m_top_rule_key;
+      const value_type m_top_rule_value;
+
+   public:
+      void lazy_insert()
+      {
+	 if ( m_rules.empty() ) {
+	    m_rules.insert( std::make_pair( m_top_rule_key, m_top_rule_value ) );
+	    ( *m_top_inserter )( *this );
+	 }
+      }
 
       template< typename Rule >
       void insert_impl( const bool force = false )
       {
-	 const std::string n = demangle< Rule >();
-	 if ( m_rules.insert( std::make_pair( key< Rule >(), value_type( n, n ) ) ).second || force ) {
+	 if ( m_rules.insert( std::make_pair( key< Rule >(), value< Rule >() ) ).second || force ) {
 	    Rule::s_insert( *this );
 	 }
       }
-   };
 
-   template<>
-   struct printer::insert_help<>
-   {
-      template< typename Print >
-      static void insert( Print &, const bool )
-      { }
-   };
-
-   template< typename Rule, typename... Rules >
-   struct printer::insert_help< Rule, Rules... >
-   {
-      template< typename Print >
-      static void insert( Print & st, const bool force )
+      template< typename Rule >
+      const value_type & find()
       {
-	 st.template insert_impl< Rule >( force );
-	 insert_help< Rules... >::insert( st, force );
+	 lazy_insert();
+
+	 const typename map_type::const_iterator i = m_rules.find( key< Rule >() );
+
+	 if ( i == m_rules.end() ) {
+	    return m_default_value;
+	 }
+	 return i->second;
       }
    };
 
@@ -184,6 +217,12 @@ namespace pegtl
       names( Print & st, const std::string & a, const std::string & b, const std::string & c )
 	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, std::string(), b, c )() )
       { }
+   };
+
+   template< typename TopRule >
+   void print_rules()
+   {
+      printer( tag< TopRule >() ).print_rules();
    };
 
 } // pegtl

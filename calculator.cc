@@ -6,7 +6,7 @@
 // The first program that was used for debugging in the early phase of PEGTL development.
 // It evaluates each command line argument as arithmetic expression consisting of
 // - integers with optional sign,
-// - the 5 basic arithmetic operations,
+// - the four basic arithmetic operations,
 // - grouping brackets.
 // For example input "3 * ( -7 + 9)" yields result 6.
 
@@ -97,7 +97,7 @@ int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
       calculator::stack stack;
-      if ( pegtl::parse< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
+      if ( pegtl::basic_parse_arg< calculator::read_calc >( argv[ arg ], arg, stack ) ) {
 	 assert( stack.size() == 1 );
 	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
       }

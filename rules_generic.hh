@@ -5,25 +5,22 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_COMBINATIONS_HH
-#define COHI_PEGTL_COMBINATIONS_HH
+#ifndef COHI_PEGTL_RULES_GENERIC_HH
+#define COHI_PEGTL_RULES_GENERIC_HH
 
 
 namespace pegtl
 {
    template< bool B >
-   struct boolean
+   struct bool_rule
    {
-      static std::string key()
-      {
-	 return typeid( boolean ).name();
-      }
+      typedef bool_rule key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 const std::string n = B ? "T" : "_";
-	 st.template update< boolean >( n, true );
+	 const std::string n = B ? "T" : "_|_";
+	 st.template update< bool_rule >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
@@ -34,18 +31,15 @@ namespace pegtl
    };
 
    struct success
-	 : boolean< true > {};
+	 : bool_rule< true > {};
 
    struct failure
-	 : boolean< false > {};
+	 : bool_rule< false > {};
 
    template< typename Rule >
    struct opt
    {
-      static std::string key()
-      {
-	 return typeid( opt ).name();
-      }
+      typedef opt key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -62,43 +56,54 @@ namespace pegtl
       }
    };
 
-   template< typename Rule, unsigned N >
+   template< typename Rule, unsigned N, unsigned M = N >
    struct rep
    {
-      static std::string key()
+      typedef rep key_type;
+
+      static std::string s_print()
       {
-	 return typeid( rep ).name();
+	 if ( M == N ) {
+	    return to_string( N );
+	 }
+	 else {
+	    return to_string( N ) + ',' + to_string( M );
+	 }	 
       }
 
       template< typename Print >
       static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
-	 const std::string n = st.template expr< Rule >() + "{" + to_string( N ) + "}";
+	 const std::string n = st.template expr< Rule >() + "{" + s_print() + "}";
 	 st.template update< rep >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 static_assert( N <= M, "pegtl: illegal expression rep< R, N, M > where N is greater than M" );
+
+	 marker< Input > p( in );
 
 	 for ( long long i = 0; i < N; ++i ) {
 	    if ( ! de.template match< Rule >( in, std::forward< Class >( cl ) ... ) ) {
 	       return p( false );
 	    }
 	 }
-	 return true;
+	 for ( long long i = N; i < M; ++i ) {
+	    if ( ! de.template match< Rule >( in, std::forward< Class >( cl ) ... ) ) {
+	       return p( true );
+	    }
+	 }
+	 return p( true );
       }
    };
 
    template< typename Rule >
    struct star
    {
-      static std::string key()
-      {
-	 return typeid( star ).name();
-      }
+      typedef star key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -119,10 +124,7 @@ namespace pegtl
    template< typename Rule >
    struct plus
    {
-      static std::string key()
-      {
-	 return typeid( plus ).name();
-      }
+      typedef plus key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -139,82 +141,6 @@ namespace pegtl
       }
    };
 
-   template< size_t Minimum, size_t Maximum >
-   struct range_predicate
-   {
-      static void p( std::ostream & o )
-      {
-	 o << "{" << Minimum << "-" << Maximum << "}";
-      }
-
-      static bool k( const size_t i )
-      {
-	 return ( Minimum <= i ) && ( i <= Maximum );
-      }
-   };
-
-   template< size_t Modulus, size_t Result >
-   struct modulus_predicate
-   {
-      static void p( std::ostream & o )
-      {
-	 o << "{n%" << Modulus << "=" << Result << "}";
-      }
-
-      static bool k( const size_t i )
-      {
-	 return ( i % Modulus ) == Result;
-      }
-   };
-
-   template< typename Rule, typename Predicate >
-   struct repeat
-   {
-      static std::string key()
-      {
-	 return typeid( repeat ).name();
-      }
-
-      template< typename Print >
-      static void s_insert( Print & st )
-      {
-	 st.template insert< Rule >();
-	 const std::string n = st.template name< Rule >() + p_i();
-	 st.template update< repeat >( n, true );
-      }
-
-      template< typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug & de, Class && ... cl )
-      {
-	 size_t i = 0;
-	 position< Input > p( in );
-
-	 while ( de.template match< Rule >( in, std::forward< Class >( cl ) ... ) ) {
-	    ++i;
-	 }
-	 return p( Predicate::k( i ) );
-      }
-
-      std::string p_i()
-      {
-	 std::ostringstream o;
-	 Predicate::p( o );
-	 return o.str();
-      }
-   };
-
-   template< typename Rule >
-   struct repeat_odd
-	 : repeat< Rule, modulus_predicate< 2, 1 > > {};
-
-   template< typename Rule > 
-   struct repeat_even
-	 : repeat< Rule, modulus_predicate< 2, 0 > > {};
-
-   template< typename Rule, size_t Minimum, size_t Maximum >
-   struct repeat_range
-	 : repeat< Rule, range_predicate< Minimum, Maximum > > {};
-
    template< typename... > struct sor;
 
    template<>
@@ -224,10 +150,7 @@ namespace pegtl
    template< typename Rule, typename... Rules >
    struct sor< Rule, Rules... >
    {
-      static std::string key()
-      {
-	 return typeid( sor ).name();
-      }
+      typedef sor key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -244,7 +167,7 @@ namespace pegtl
       }
    };
 
-   template< typename... > struct seq;
+   template< typename ... > struct seq;
 
    template<>
    struct seq<>
@@ -253,10 +176,7 @@ namespace pegtl
    template< typename Rule, typename... Rules >
    struct seq< Rule, Rules... >
    {
-      static std::string key()
-      {
-	 return typeid( seq ).name();
-      }
+      typedef seq key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -269,18 +189,35 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > h( in );
+	 marker< Input > h( in );
 	 return h( de.template match< Rule >( in, std::forward< Class >( cl ) ... ) && pegtl::seq< Rules... >::template s_match( in, de, std::forward< Class >( cl ) ... ) );
+      }
+   };
+
+   template< typename Rule >
+   struct must
+   {
+      typedef Rule key_type;
+
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template insert< Rule >();
+	 const std::string n = "!" + st.template name< Rule >();
+	 st.template update< must >( n, true );
+      }
+
+      template< typename Input, typename Debug, typename ... Class >
+      static bool s_match( Input & in, Debug & de, Class && ... cl )
+      {
+	 return de.template match< Rule >( true, in, std::forward< Class >( cl ) ... );
       }
    };
 
    template< typename Rule >
    struct at
    {
-      static std::string key()
-      {
-	 return typeid( at ).name();
-      }
+      typedef at key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -293,7 +230,7 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 const marker< Input > p( in );
 	 return de.template match< Rule >( in, std::forward< Class >( cl ) ... );
       }
    };
@@ -301,10 +238,7 @@ namespace pegtl
    template< typename Rule >
    struct not_at
    {
-      static std::string key()
-      {
-	 return typeid( not_at ).name();
-      }
+      typedef not_at key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -317,17 +251,14 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 const marker< Input > p( in );
 	 return ! de.template match< Rule >( in, std::forward< Class >( cl ) ... );
       }
    };
 
    struct eof
    {
-      static std::string key()
-      {
-	 return typeid( eof ).name();
-      }
+      typedef eof key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -342,47 +273,25 @@ namespace pegtl
       }
    };
 
-   template< typename Rule >
-   struct must
-   {
-      static std::string key()
-      {
-	 return typeid( must ).name();
-      }
-
-      template< typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug & de, Class && ... cl )
-      {
-	 return de.template match< Rule >( true, in, std::forward< Class >( cl ) ... );
-      }
-   };
-
-   template< typename... Rules >
-   struct seq_must
-	 : seq< must< Rules >... > {};
-
-   template< typename Rule >
+   template< typename Cond >
    struct until1
    {
-      static std::string key()
-      {
-	 return typeid( until1 ).name();
-      }
+      typedef until1 key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = st.template name< Rule >() + "@";
+	 st.template insert< Cond >();
+	 const std::string n = st.template name< Cond >() + "@";
 	 st.template update< until1 >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
 
-	 while ( ! de.template match< Rule >( false, in, std::forward< Class >( cl ) ... ) ) {
+	 while ( ! de.template match< Cond >( false, in, std::forward< Class >( cl ) ... ) ) {
 	    if ( in.eof() ) {
 	       return p( false );
 	    }
@@ -392,29 +301,26 @@ namespace pegtl
       }
    };
 
-   template< typename RuleWhat, typename RuleCond >
+   template< typename What, typename Cond >
    struct until
    {
-      static std::string key()
-      {
-	 return typeid( until ).name();
-      }
+      typedef until key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< RuleWhat, RuleCond >();
-	 const std::string n = "( " + st.template name< RuleWhat >() + " % " + st.template name< RuleCond >() + " )";
+	 st.template insert< What, Cond >();
+	 const std::string n = "( " + st.template name< What >() + " % " + st.template name< Cond >() + " )";
 	 st.template update< until >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
 
-	 while ( ! de.template match< RuleCond >( false, in, std::forward< Class >( cl ) ... ) ) {
-	    if ( in.eof() || ( ! de.template match< RuleWhat >( in, std::forward< Class >( cl ) ... ) ) ) {
+	 while ( ! de.template match< Cond >( false, in, std::forward< Class >( cl ) ... ) ) {
+	    if ( in.eof() || ( ! de.template match< What >( in, std::forward< Class >( cl ) ... ) ) ) {
 	       return p( false );
 	    }
 	 }
@@ -422,91 +328,103 @@ namespace pegtl
       }
    };
 
-   template< bool Must, typename RuleIf, typename RuleThen >
+   template< bool Must, typename Cond, typename Then >
    struct cond2impl
    {
-      static std::string key()
-      {
-	 return typeid( cond2impl ).name();
-      }
+      typedef cond2impl key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< RuleIf, RuleThen >();
-	 const std::string n = "( " + st.template name< RuleIf >() + ( Must ? " ->> " : " --> " ) + st.template name< RuleThen >() + " )";
+	 st.template insert< Cond, Then >();
+	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + st.template name< Then >() + " )";
 	 st.template update< cond2impl >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
 
-	 if ( de.template match< RuleIf >( false, in, std::forward< Class >( cl ) ... ) ) {
-	    return p( de.template match< RuleThen >( Must, in, std::forward< Class >( cl ) ... ) );
+	 if ( de.template match< Cond >( false, in, std::forward< Class >( cl ) ... ) ) {
+	    return p( de.template match< Then >( Must, in, std::forward< Class >( cl ) ... ) );
 	 } else {
-	    return ! Must;
+	    return p( ! Must );
 	 }
       }
    };
 
-   template< typename RuleIf, typename RuleThen >
+   template< typename Cond, typename Then >
    struct ifmust
-	 : cond2impl< true, RuleIf, RuleThen > {};
+	 : cond2impl< true, Cond, Then >
+   {
+      //      typedef seq< Cond, must< Then > > key_type;
+   };
 
-   template< typename RuleIf, typename RuleThen >
+   template< typename Cond, typename Then >
    struct ifthen
-	 : cond2impl< false, RuleIf, RuleThen > {};
+	 : cond2impl< false, Cond, Then >
+   {
+      //      typedef sor< seq< Cond, Then >, not_at< Cond > > key_type;
+   };
 
-   template< bool Must, typename RuleIf, typename RuleThen, typename RuleElse >
+   template< bool Must, typename Cond, typename Then, typename Else >
    struct cond3impl
    {
-      static std::string key()
-      {
-	 return typeid( cond3impl ).name();
-      }
+      typedef cond3impl key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< RuleIf, RuleThen, RuleElse >();
-	 const std::string n = "( " + st.template name< RuleIf >() + ( Must ? " ->> " : " --> " ) + st.template name< RuleThen >() + " / " + st.template name< RuleElse >() + " )";
+	 st.template insert< Cond, Then, Else >();
+	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + st.template name< Then >() + " / " + st.template name< Else >() + " )";
 	 st.template update< cond3impl >( n, true );
       }
 
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
 
-	 if ( de.template match< RuleIf >( false, in, std::forward< Class >( cl ) ... ) ) {
-	    return p( de.template match< RuleThen >( Must, in, std::forward< Class >( cl ) ... ) );
+	 if ( de.template match< Cond >( false, in, std::forward< Class >( cl ) ... ) ) {
+	    return p( de.template match< Then >( Must, in, std::forward< Class >( cl ) ... ) );
 	 }
 	 else {
-	    return p( de.template match< RuleElse >( Must, in, std::forward< Class >( cl ) ... ) );
+	    return p( de.template match< Else >( Must, in, std::forward< Class >( cl ) ... ) );
 	 }
       }
    };
 
-   template< typename RuleIf, typename RuleThen, typename RuleElse >
+   template< typename Cond, typename Then, typename Else >
    struct ifmustelse
-	 : cond3impl< true, RuleIf, RuleThen, RuleElse > {};
-
-   template< typename RuleIf, typename RuleThen, typename RuleElse >
-   struct ifthenelse
-	 : cond3impl< false, RuleIf, RuleThen, RuleElse > {};
-
-   template< typename RuleWhat, typename RulePadL, typename RulePadR = RulePadL >
-   struct pad
-	 : seq< star< RulePadL >, RuleWhat, star< RulePadR > >
+	 : cond3impl< true, Cond, Then, Else >
    {
+      //      typedef sor< seq< Cond, must< Then > >, seq< not_at< Cond >, must< Else > > > key_type;
+   };
+
+   template< typename Cond, typename Then, typename Else >
+   struct ifthenelse
+	 : cond3impl< false, Cond, Then, Else >
+   {
+      //      typedef sor< seq< Cond, Then >, seq< not_at< Cond >, Else > > key_type;
+   };
+
+   template< typename What, typename RulePadL, typename RulePadR = RulePadL >
+   struct pad
+	 : seq< star< RulePadL >, What, star< RulePadR > >
+   {
+      template< typename ... Dones >
+      struct min
+      {
+	 static const size_t value = What::template min< pad, Dones ... >::value;
+      };
+
       template< typename Print >
       static void s_insert( Print & st )
       {
-	 st.template insert< seq< star< RulePadL >, RuleWhat, star< RulePadR > > >( true );
-	 const std::string n = st.template name< RuleWhat >();
-	 const std::string e = st.template expr< RuleWhat >();
+	 st.template insert< seq< star< RulePadL >, What, star< RulePadR > > >( true );
+	 const std::string n = st.template name< What >();
+	 const std::string e = st.template expr< What >();
 	 st.template update< pad >( n, e );
       }
    };
@@ -514,10 +432,13 @@ namespace pegtl
    template< typename Rule, typename Func >
    struct action
    {
-      static std::string key()
+      template< typename ... Dones >
+      struct min
       {
-	 return typeid( Rule ).name();
-      }
+	 static const size_t value = Rule::template min< action, Dones ... >::value;
+      };
+
+      typedef typename Rule::key_type key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -530,7 +451,8 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 position< Input > p( in );
+	 marker< Input > p( in );
+
 	 if ( Rule::template s_match( in, de, std::forward< Class >( cl ) ... ) ) {
 	    Func::template matched< Rule >( std::string( p.here(), in.here() ), std::forward< Class >( cl ) ... );
 	    return p( true );

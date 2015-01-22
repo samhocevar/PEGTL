@@ -1,20 +1,24 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#ifndef COHI_PEGTL_UTILITY_HH
-#define COHI_PEGTL_UTILITY_HH
-
-#include <cassert>
-#include <sstream>
-#include <fstream>
-#include <cxxabi.h>
-#include <iterator>
-#include <stdexcept>
-#include <algorithm>
-
+#ifndef COHI_PEGTL_UTILITIES_HH
+#define COHI_PEGTL_UTILITIES_HH
 
 namespace pegtl
 {
+   template< typename T >
+   struct tag
+   {
+      typedef T type;
+
+      tag()
+      { }
+
+      explicit
+      tag( const int )
+      { }
+   };
+
 #define PEGTL_PRINT( MeSSaGe )				\
    do { std::cerr << MeSSaGe << '\n'; } while( 0 )
 
@@ -35,7 +39,13 @@ namespace pegtl
 	    result += "\\\"";
 	    break;
 	 case '\\':
-	    result += "\\";
+	    result += "\\\\";
+	    break;
+	 case '\a':
+	    result += "\\a";
+	    break;
+	 case '\b':
+	    result += "\\b";
 	    break;
 	 case '\t':
 	    result += "\\t";
@@ -56,7 +66,7 @@ namespace pegtl
 	    break;
 	 default: {
 	    char tmp[ 12 ];
-	    ::snprintf( tmp, sizeof( tmp ), "\\%03d", i );
+	    ::snprintf( tmp, sizeof( tmp ), "\\u%04x", i );
 	    result += tmp;
 	 }  break;
       }
@@ -141,6 +151,60 @@ namespace pegtl
    template< typename T > std::string demangle()
    {
       return demangle_impl( typeid( T ).name() );
+   }
+
+   struct file_reader
+   {
+      explicit
+      file_reader( const std::string & filename )
+	    : m_fd( ::open( filename.c_str(), O_RDONLY ) ),
+	      m_fn( filename )
+      {
+	 if ( m_fd < 0 ) {
+	    PEGTL_THROW( "pegtl: unable to open() file " << m_fn << " for reading errno " << errno );
+	 }
+      }
+
+      ~file_reader()
+      {
+	 if ( m_fd > -1 ) {
+	    ::close( m_fd );
+	 }
+      }
+
+      template< typename Container >
+      std::string read()
+      {
+	 errno = 0;
+	 struct stat st;
+
+	 if ( ::fstat( m_fd, & st ) < 0 ) {
+	    PEGTL_THROW( "pegtl: unable to fstat() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	 }
+	 Container nrv;
+	 nrv.resize( size_t( st.st_size ) );
+
+	 if ( st.st_size && ( ::read( m_fd, & nrv[ 0 ], nrv.size() ) != int( nrv.size() ) ) ) {
+	    PEGTL_THROW( "pegtl: unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
+	 }
+	 PEGTL_PRINT( "pegtl: read " << st.st_size << " bytes from file " << m_fn );
+	 return nrv;
+      }
+
+   private:
+      const int m_fd;
+      const std::string m_fn;
+   };
+
+   inline std::string read_string( const std::string & filename )
+   {
+      return file_reader( filename ).read< std::string >();
+   }
+
+   template< typename Type >
+   inline std::vector< Type > read_vector( const std::string & filename )
+   {
+      return file_reader( filename ).read< std::vector< Type > >();
    }
 
    template< typename T >

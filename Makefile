@@ -2,45 +2,38 @@
 
 CXX=g++-mp-4.3
 
-CPPFLAGS=-std=gnu++0x -I. -D_REENTRANT
+CPPFLAGS=-I. -std=gnu++0x -D_REENTRANT
 
-CXXFLAGS=-pipe -O3 -Wall -Wextra -Wimplicit -Wconversion -Wcast-align -Woverloaded-virtual -Wold-style-cast -Wformat=2 -Wswitch-enum -Wswitch-default -Wredundant-decls -fno-enforce-eh-specs -fno-strict-overflow -lpthread
+CXXFLAGS=-O3 -g -Wall -Wextra -Wimplicit -Wconversion -Wcast-align -Woverloaded-virtual -Wold-style-cast -Wformat=2 -Wswitch-enum -Wswitch-default -Wredundant-decls -fno-enforce-eh-specs -fno-strict-overflow -lpthread
 
-.PHONY: t1 all test clean
-
-t1:
-	@echo
-	@echo "PEGTL Makefile"
-	@echo 
-	@echo "  make all   # to build everything"
-	@echo "  make test  # to run the unit tests"
-	@echo "  make clean # to clean generated files"
-	@echo
-	@echo "Please customise Makefile before building!"
-	@echo
+.PHONY: clean message
 
 SOURCES:=$(wildcard *.cc)
 DEPENDS:=$(SOURCES:.cc=.d)
 PROGRAMS:=$(SOURCES:.cc=)
 
-all: $(PROGRAMS)
-
-test: testcases
-	./testcases 2> /dev/null
+all: message $(PROGRAMS)
+	@echo "Executing PEGTL unit tests."
+	@./unittests 2> /dev/null
 
 clean:
 	rm -f $(DEPENDS) $(PROGRAMS)
+
+message:
+	@echo
+	@echo "Please customise Makefile before building!"
+	@echo
+	@echo "Compiling PEGTL unit tests and examples."
+	@echo
 
 .SECONDARY:
 
 %.d: %.cc
 	$(CXX) $(CPPFLAGS) -MM -MT $@ $< -o $@
 
-%: %.cc
+%: %.cc %.d
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
-ifneq ($(MAKECMDGOALS),)
 -include $(DEPENDS)
-endif
 endif

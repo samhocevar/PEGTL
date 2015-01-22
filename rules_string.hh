@@ -5,17 +5,14 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_ATOMICS_HH
-#define COHI_PEGTL_ATOMICS_HH
+#ifndef COHI_PEGTL_RULES_STRING_HH
+#define COHI_PEGTL_RULES_STRING_HH
 
 namespace pegtl
 {
    struct any
    {
-      static std::string key()
-      {
-	 return typeid( any ).name();
-      }
+      typedef any key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -37,10 +34,7 @@ namespace pegtl
    template< int C >
    struct one
    {
-      static std::string key()
-      {
-	 return typeid( one ).name();
-      }
+      typedef one key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -52,6 +46,9 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( h == C );
       }
@@ -64,10 +61,7 @@ namespace pegtl
    template< int C >
    struct not_one
    {
-      static std::string key()
-      {
-	 return typeid( not_one ).name();
-      }
+      typedef not_one key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -79,6 +73,9 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( h != C );
       }
@@ -107,10 +104,7 @@ namespace pegtl
    template< int Char, int... Chars >
    struct list< Char, Chars... >
    {
-      static std::string key()
-      {
-	 return typeid( list ).name();
-      }
+      typedef list key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -124,6 +118,9 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {      
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( m_i( h ) );
       }
@@ -143,10 +140,7 @@ namespace pegtl
    template< int... Chars >
    struct not_list
    {
-      static std::string key()
-      {
-	 return typeid( not_list ).name();
-      }
+      typedef not_list key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -160,6 +154,9 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug &, Class && ... )
       {      
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( ! list< Chars ... >::m_i( h ) );
       }
@@ -176,10 +173,7 @@ namespace pegtl
    template< int C, int D >
    struct range
    {
-      static std::string key()
-      {
-	 return typeid( range ).name();
-      }
+      typedef range key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -192,6 +186,9 @@ namespace pegtl
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression range< C, D > where C is greater than D" );
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( ( h >= C ) && ( h <= D ) );
       }
@@ -200,10 +197,7 @@ namespace pegtl
    template< int C, int D >
    struct not_range
    {
-      static std::string key()
-      {
-	 return typeid( not_range ).name();
-      }
+      typedef not_range key_type;
 
       template< typename Print >
       static void s_insert( Print & st )
@@ -216,6 +210,10 @@ namespace pegtl
       static bool s_match( Input & in, Debug &, Class && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression not_range< C, D > where C is greater than D" );
+
+	 if ( in.eof() ) {
+	    return false;
+	 }
 	 character< Input > h( in );
 	 return h( ( h < C ) || ( h > D ) );
       }
@@ -236,33 +234,28 @@ namespace pegtl
 	 : success
    {
       template< typename Print >
-      static void d_i( std::ostream &, Print & )
-      {
-	 ;
-      }
+      static void s_insert( std::ostream &, Print & )
+      { }
    };
 
    template< int Char, int... Chars >
    struct string< Char, Chars... >
    {
-      static std::string key()
-      {
-	 return typeid( string ).name();
-      }
+      typedef string key_type;
 
       template< typename Print >
-      static void d_i( std::ostream & o, Print & st )
+      static void s_insert( std::ostream & o, Print & st )
       {
 	 st.template insert< one< Char > >();
 	 o << escape( Char );
-	 string< Chars... >::d_i( o, st );
+	 string< Chars... >::s_insert( o, st );
       }
       
       template< typename Print >
       static void s_insert( Print & st )
       {
 	 std::ostringstream o;
-	 d_i( o, st );
+	 s_insert( o, st );
 	 const std::string n = std::string( "\"" ) + o.str() + "\"";
 	 st.template update< string >( n, true );
       }
@@ -281,6 +274,131 @@ namespace pegtl
    template< int Char, typename RulePadL, typename RulePadR = RulePadL >
    struct pad_one
 	 : pad< one< Char >, RulePadL, RulePadR > {};
+
+   struct digit
+	 : range< '0', '9' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< digit >( "digit", true );
+      }
+   };
+
+   struct lower
+	 : range< 'a', 'z' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< lower >( "lower", true );
+      }      
+   };
+
+   struct upper
+	 : range< 'A', 'Z' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< upper >( "upper", true );
+      }      
+   };
+
+   struct alpha
+	 : sor< lower, upper >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< alpha >( "alpha", true );
+      }
+   };
+
+   struct alnum
+	 : sor< alpha, digit >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< alpha >( "alnum", true );
+      }
+   };
+
+   struct xdigit
+	 : sor< digit, range< 'a', 'f' >, range< 'A', 'F' > >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< alpha >( "xdigit", true );
+      }
+   };
+
+   struct ident1
+	 : sor< one< '_' >, alpha > {};
+
+   struct ident2
+	 : sor< digit, ident1 > {};
+
+   struct identifier
+	 : seq< ident1, star< ident2 > > {};
+
+   struct lf
+	 : one< '\n' > {};
+
+   struct cr
+	 : one< '\r' > {};
+
+   struct crlf
+	 : seq< cr, lf > {};
+
+   struct eol
+	 : sor< eof, crlf, lf, cr > {};
+
+   struct blank
+	 : list< ' ', '\t' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< blank >( "blank", true );
+      }
+   };
+
+   struct space_star
+	 : star< blank > {};
+
+   struct space_plus
+	 : plus< blank > {};
+
+   struct space
+	 : list< ' ', '\n', '\r', '\t', '\v', '\f' >
+   {
+      template< typename Print >
+      static void s_insert( Print & st )
+      {
+	 st.template update< space >( "space", true );
+      }
+   };
+
+   struct white_star
+	 : star< space > {};
+
+   struct white_plus
+	 : plus< space > {};
+
+   struct until_eol
+	 : until1< eol > {};
+
+   struct white_until_eof
+	 : until< space, eof > {};
+
+   struct space_until_eol
+	 : until< blank, eol > {};
+
+   struct shebang
+	 : ifmust< string< '#', '!' >, until_eol > {};
 
 } // pegtl
 

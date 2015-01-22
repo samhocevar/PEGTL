@@ -7,14 +7,16 @@
 
 =Introduction=
 
-The Parsing Expression Grammar Template Library (PEGTL) is a C++ library for creating parsers according to a Parsing Expression Grammar (PEG).
-Grammars are embedded as regular C++ code, and consist of hierarchies of (templated) classes.
-These class hierarchies naturally correspond to the inductive definitions of PEGs.
+The Parsing Expression Grammar Template Library (PEGTL) is a C++0x library for creating parsers according to a Parsing Expression Grammar (PEG).
+Grammars are embedded as regular C++ code, and consist of template hierarchies of classes.
+These hierarchies naturally correspond naturally to the inductive definitions of PEGs.
 The library extends on the subject of PEGs with new expression types, and mechanisms to ensure helpful diagnostics in case of parsing errors.
 PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
 The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD parser].
 
 ===Status===
+
+PEGTL version 0.10 is ready for download, include the R6RS Scheme grammar as example, and should work "just fine".
 
 *Features*
 
@@ -32,11 +34,9 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
     # diagnostics on error,
     # on error plus complete trace of all rule invocations.
   * Expressions/rules and actions embedded in simple C++ code.
-  * Detects some invalid grammars at compile-time.
-  * Optimises some redundancies in the grammar at compile-time.
   * Diagnostics with (nearly-)pretty-printing of grammar rules.
-  * In general "better" thanks to using some C++0x features.
-  * Example programs that show many of the PEGTL features.
+  * (Some grammar optimisations and checks at compile-time.)
+  * Examples, inluding PEGTL grammar for R6RS Scheme syntax.
 
 *Compared to Context-Free Grammars*
 
@@ -48,6 +48,7 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 The PEGs should be easy to learn and apply by anyone experienced with formal languages, in particular context-free grammars (CFG) and their representation in Backus-Naur form (BNF, EBNF).
 The PEGTL can be used to effectively create efficient and powerful parsers in C++0x.
+The reader should be comfortable with CFGs, (E)BNF and/or PEGs, and have a reasonable understanding of C++ templates and related compiler messages.
 
 ===Limitations===
 
@@ -59,8 +60,7 @@ The PEGTL uses compile-time polymorphism (i.e. templates; rather than run-time p
 It might therefore not be well suited for applications that create and/or change grammars at run-time.
 Support for run-time polymorphism might be included in the future if required.
 
-The PEGTL currently only handles ASCII input data.
-Character sets/encodings compatible with ASCII that do _not_ use variable-length character encodings, e.g. ISO 8859-1, should work too.
+The PEGTL currently has explicit support ASCII input data only.
 Support for UTF-8 and raw binary data is likely to be included in the near future.
 Other character sets and encodings will probably never be supported.
 
@@ -70,9 +70,9 @@ Support for very large inputs might be included in the future.
 
 ===Requirements===
 
-The PEGTL uses features from C++0x and requires GCC 4.3.0, or later, to compile.
-It was developed under Mac OS X, but should work on any Linux or Unix system.
-Only headers and libraries defined in the C99, C++0x, and SUSv3 standards are used.
+The PEGTL some C++0x features and requires GCC 4.3 with `-std=gnu++0x` to compile.
+It was developed under Mac OS X, but should work on any Linux or Unix system:
+Only headers and libraries from GCC 4.3 and the SUSv3 standard are used.
 
 ===Installation===
 
@@ -83,7 +83,7 @@ To install, all header files must be copied to your projects' directory of inclu
 For projects using the PEGTL, it must be ensured that a suitable compiler is used, and that the directory with the PEGTL header files is in the include search path.
 For recommended compiler switches see the `Makefile` included in the PEGTL distribution archive; if a project using the PEGTL compiles, it can be reasonably assumed to function correctly.
 
-It is highly recommended to check the `Makefile`, and to change the compiler flags to whatever is used in your projects before invoking `make test` to run all unit tests.
+It is highly recommended to check the `Makefile`, and to change the compiler flags to whatever is used in your projects, and to run `make`, which also runs the unit-tets.
 
 
 =Tutorial=
@@ -92,21 +92,31 @@ This tutorial covers basic use cases of the PEGTL: how to use the provided facil
 
 ===Basic Concepts===
 
-A PEGTL _parser_ is a front-end class or function that ties together all that is required to actually parse something.
-A parser needs a _rule_ that represents a grammar expression, an _input_ to parse, and a _debug_ that determines if, when and how to generate diagnostic messages.
-
-All three of _rule_, _input_, and _debug_ are appropriate classes.
-In this tutorial, only the provided _input_ and _debug_ classes will be used.
+The PEGTL is built around the concepts of _rule_, _input_, and _debug_, three kinds of classes with dedicated roles.
 
 _Rules_ are classes that represent grammar expressions.
-The PEGTL provides rules for all PEG operations, plus atomic rules for characters, strings, some character classes, and some convenience rules.
-_Rules_ are combined to new _rules_ by specialising and/or instantiating the class templates that correspond to non-atomic parsing expressions.
+The PEGTL provides _rules_ for all PEG operations, plus atomic _rules_ for characters, strings, some character classes, and some convenience _rules_.
+Atomic _rules_ can be directly used, or atomic and user-defined _rules_ can be used to inductively build _rules_ for arbitrary grammars.
 
-Further on, the _rules_ of a grammar will be extended by _state_ and _actions_ in order to make a parser do more than return a bool: whether the input is recognised.
+The _input_ classes are wrappers around data sources from which the PEGTL reads during parsing.
+The _debug_ classes determine if, when, and how to generate diagnostic messages.
+
+For the _debug_ there is currently a choice of three classes defined in `pegtl_parse.hh` and `pegtl_debug.hh`.
+
+  # Class `pegtl::dummy_debug` does not produce any diagnostic messages.
+  # Class `pegtl::basic_debug` generates diagnostic messages in case of error.
+  # Class `pegtl::trace_debug` generates diagnostic messages for every rule invocation.
+
+Note that class `pegtl::trace_debug` has a run-time flag to disable trace messages, in which case it falls back to the behaviour of class `pegtl::basic_debug`.
+
+The main PEGTL `parse()` function requires a _rule_, an _input_, and a _debug_ to perform.
+There are also front-end functions to `parse()` that only take the _rule_ as template argument, and automatically handle _input_ and _debug_.
+
+Further on, the _rules_ of a grammar will be extended by _state_ and _actions_ in order to make a parser do more than return a Boolean 'success' flag.
 
 ===First Example===
 
-For example, consider the _rule_ `first` as provided in `first.cc`.
+As first example consider the _rule_ `first` provided in `first.cc`.
 
 {{{
 namespace example
@@ -119,68 +129,44 @@ namespace example
 }}}
 
 The rules `alpha` and `digit` are provided and accept a single ASCII letter, or digit, respectively.
-The `seq` template concatenates expressions, `sor` is the ordered choice, and `until` requires the first rule, `sor< alpha, digit >`, to match until `eol`, end-of-line or end-of-file, is reached.
+The `seq` template stands for concatenation, `sor` for ordered choice; `until` requires the first rule, `sor< alpha, digit >`, to match until `eol`, end-of-line or end-of-file, is reached.
 The _rule_ can be read as "an alpha, followed by zero-or-more characters that can be either alphas or digits", i.e. the regular expression "[a-zA-Z][a-zA-Z0-9]*".
 
 Note that the rule `first` could also be defined as a `typedef`, rather than a `struct`, i.e. as `typedef seq< alpha, until< sor< alpha, digit >, eol > > first;`.
 For the resulting grammar there is no difference whether a `typedef` or a `struct` is used.
 However it is recommended to _not_ use `typedef` because the PEGTL uses the name of the `struct` in diagnostic messages, which can enhance readability.
 
-===Actual Parsing===
-
-Once _rule_ is defined, it can be used in conjunction with an _input_ and a _debug_ to actually parse something.
-Currently one _input_ class `pegtl::input` is provided in `pegtl_input.hh`.
-It can read from a file, a `std::string`, or an arbitrary iterator range of characters.
-
-For the _debug_ there is currently a choice of three classes defined in `pegtl_parse.hh` and `pegtl_debug.hh`.
-
-  # Class `pegtl::dummy_debug` does not produce any diagnostic messages.
-  # Class `pegtl::basic_debug` generates diagnostic messages in case of error.
-  # Class `pegtl::trace_debug` generates diagnostic messages for every rule invocation.
-
-Note that class `pegtl::trace_debug` has a run-time flag to disable trace messages, in which case it falls back to the behaviour of class `pegtl::basic_debug`.
-
-===First Example (cont'd)===
-
 The easiest way to do some actual parsing is by calling one of the `parse` front-end functions with two strings as argument.
-The first string is the input to the _parser_, the second string is used for diagnostic purposes only and should provide information as to where the first string was obtained from.
-This might be a filename, a socket address, etc., or a command line argument as in the example below.
+In this example the function is `basic_parse_arg()` which uses a `basic_debug` for diagnostic purposes (see below), and takes (at least) two arguments, a string `s` and an integer `i`, where the assumption is that `s == argv[i]`.
+This assumption is only used in error messages that show where the erroneous input came from.
+The _rule_ is, by necessity, a template argument to `basic_parse_arg()`.
 
 {{{
 int main( int argc, char ** argv )
 {
    for ( int i = 1; i < argc; ++i ) {
-      parse< example::first >( argv[ i ], "command line argument" );
+      basic_parse_arg< example::first >( argv[ i ], i );
    }
    return 0;
 }
 }}}
 
-The `parse` function internally creates an instance of class `pegtl::input` and, by default, uses a `basic_debug` in order to provide "sensible" error messages.
-It is declared as follows.
-
-{{{
-   template< typename Rule, typename Debug = basic_debug, typename ... Class >
-   bool parse( const std::string & input, const std::string & debug, Class && ... cl );
-}}}
-
-The return value indicates whether parsing was successful.
-The optional arguments `Class && ... cl` are the _state_ of the parser, see below.
-
-It is recommended to be familiar with rvalue references and variadic templates as required for "perfect forwarding" in [http://en.wikipedia.org/wiki/C%2B%2B0x C++0x].
+The return value of `basic_parse_arg()` indicates whether parsing was successful.
+In the case of failure, diagnostic messages are printed to `std::cerr`.
 
 ===State and Actions===
 
-A _parser_ can be invoked with arbitrary _state_ that is in general passed recursively from _rule_ invocation to _rule_ invocation.
-User-defined _rules_ can use or change the _state_, create or replace it, or choose to not forward it to sub-ordinate _rules_.
-Which purpose the _state_ serves will mainly depend on the _actions_ embedded in the grammar.
+The _parser_ functions use variadic templates to accept arbitrary additional arguments that are, in general, passed recursively from _rule_ invocation to _rule_ invocation.
+These arguments are the additional _state_ of the parser that can be created, modifyied, or replaced by appropriate user-defined _actions_:
+Which purpose the _state_ serves depends only on the _actions_ embedded in the grammar.
 
 An _action_ is a function that, in the definition of the grammar in the C++ source, is associated with a _rule_.
 Every time the _rule_ succeeds, the action is invoked with the portion of the _input_ that matched the _rule_.
 
-There are two typical use cases for _actions_.
-Either they perform a specific final task while parsing, like in the included `calculator.cc` where the expressions are evaluted by the parser "on the fly" using _actions_.
-Or _actions_ can be used to generate an intermediate representation, usually some kind of abstract syntax tree (AST), that is further processed separately, after the parser has finished its job.
+Some typical use cases for _state_ and _actions_ are
+
+  * _actions_ that generate some kind of abstract syntax tree (AST) as _state_, that is further processed separately, after the parser has finished its job, or
+  * specific tasks performed while parsing, like in the included `calculator.cc` where the expressions are evaluted by the parser "on the fly" using _actions_.
 
 An _action_ is attached to a rule by using the `action` class template that takes two template arguments.
 The first argument is a _rule_, the second argument is the _action_, which must be a class providing a static `matched` function declared as follows
@@ -195,7 +181,7 @@ The first argument is a _rule_, the second argument is the _action_, which must 
 
 where the first string argument contains the portion of the input that the rule attached to the action matched, and the actually used _state_ must be substituted for the `???`.
 
-For example the included `calculator.cc` uses a `std::vector< int >` as stack for the evaluation of (arbitrarily nested) arithmetic expressions.
+For example, the included `calculator.cc` uses a `std::vector< int >` as stack for the evaluation of (arbitrarily nested) arithmetic expressions.
 Whenever the parser recognises (the string representation of) a number, it pushes the number onto the evaluation stack.
 
 {{{
@@ -255,19 +241,10 @@ This mechanism is used with the PEGTL to give rules like `digit` or `eol` their 
 This table shows the principal PEGTL expressions, and their symbolic representation.
 The simple rules should be self explaining, the combinators are explained in greater detail below.
 
-|| *Expression* || *Atomic Rule* || *Description* ||
+|| *Expression* || *Basic Rules* || *Description* ||
 || || `eof` || Matches end-of-file. ||
 || || `failure` || Always fails. ||
 || || `success` || Always succeeds. ||
-|| `.` || `any` || Match any character. ||
-|| `"a"` || `one< 'a' >` || Match character. ||
-|| `[^a]` || `not_one< 'a' >` || Match any other character. ||
-|| `[az]` || `list< 'a', 'z' >` || Match character in list. ||
-|| `[^az]` || `not_list< 'a', 'z' >` || Match character not in list. ||
-|| `[a-z]` || `range< 'a', 'z' >` || Match character in range. ||
-|| `[^a-z]` || `not_range< 'a', 'z' >` || Match character not in range. ||
-|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o' >` || Match character sequence. ||
-|| *Expression* || *Combinator Rule* || *Description* ||
 || `R?` || `opt< R >` || "Optional" ||
 || `R*` || `star< R >` || "Repeat zero-or-more" ||
 || `R+` || `plus< R >` || "Repeat one-or-more" ||
@@ -284,7 +261,15 @@ The simple rules should be self explaining, the combinators are explained in gre
 || || `ifmustelse< C, R, T >` || PEGTL convenience extension. ||
 || || `pad< T, L, R = L >` || PEGTL convenience extension. ||
 || || `action< T, F >` || PEGTL way of attaching behaviour to a parsing rule. ||
-|| *Expression* || *ASCII Rule* || *Description* ||
+|| *Expression* || *String Rules* || *Description* ||
+|| `.` || `any` || Match any character. ||
+|| `"a"` || `one< 'a' >` || Match character. ||
+|| `[^a]` || `not_one< 'a' >` || Match any other character. ||
+|| `[az]` || `list< 'a', 'z' >` || Match character in list. ||
+|| `[^az]` || `not_list< 'a', 'z' >` || Match character not in list. ||
+|| `[a-z]` || `range< 'a', 'z' >` || Match character in range. ||
+|| `[^a-z]` || `not_range< 'a', 'z' >` || Match character not in range. ||
+|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o' >` || Match character sequence. ||
 || `"\n` || `lf` || Single line-feed. ||
 || `"\r"` || `cr` || Single carriage-return. ||
 || `"\r\n"` || `crlf` || Combined carriage-return and line-feed. ||
@@ -300,6 +285,8 @@ The simple rules should be self explaining, the combinators are explained in gre
 || || `identifier` || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
 
 Note that the Posix syntax for extended regular expressions is used for the character classes in square brackets.
+
+Note that the current implementation of the string rules only works correctly with ASCII.
 
 =Combinators=
 
@@ -343,11 +330,11 @@ The `must` template invokes `Rule` and stops the parser when `Rule` fails, even 
 
 ===until1< Cond >===
 
-Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< any, Rule > >`, but implemented without recursion.
+Semantically equivalent to the recursive `Rule = sor< Cond, seq< any, Rule > >`, but implemented without recursion.
 
 ===until< What, Cond >===
 
-Semantically equivalent to the recursive `Rule = sor< at< Cond >, seq< What, Rule > >`, but implemented without recursion.
+Semantically equivalent to the recursive `Rule = sor< Cond, seq< What, Rule > >`, but implemented without recursion.
 
 ===rep< Rule, Number >===
 
@@ -424,7 +411,27 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
-2008-04-03: Changelog starts with PEGTL version 0.9.
+*PEGTL version 1.0*
+
+  * Added Scheme R6RS grammar.
+  * Fixed behaviour at end-of-input (aesthetics).
+  * Fixed behaviour and use of class `position` (*correctness*).
+  * Changed to lazy initialisation of pretty-printer (performance).
+  * Changed the design of the input and parser classes (flexibility).
+  * Changed how expression rules provide their printer key (simplicity).
+
+*PEGTL version 0.9*
+
+  * Changelog starts with PEGTL version 0.9.
+
+===Compatibility===
+
+My guideline regarding compatibility between versions is as follows:
+
+  * Before version 1.0 anything can change, after version 1.0:
+  * Backward compatibility is retained within major versions, with the only exception of critical bugfixes, that are always allowed to break compatibility.
+  * Whenever possible, incompatible changes from major version to major version break the build, i.e. whenever the semantics changes, the name changes too.
+  * Version numbers are independent of how much changed, e.g. version 1.10 might grow the library a lot, whereas 2.0 is just a small, incompatible change.
 
 
 =License=

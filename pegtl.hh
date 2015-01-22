@@ -4,41 +4,47 @@
 #ifndef COHI_PEGTL_HH
 #define COHI_PEGTL_HH
 
-// #define PEGTL_IMPURE_OPTIMISATIONS
-
-#include <set>
-#include <map>
-#include <tuple>
-#include <vector>
-#include <string>
-#include <memory>
-#include <iomanip>
-#include <numeric>
-#include <utility>
-#include <iostream>
-#include <iterator>
 #include <algorithm>
 #include <functional>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <numeric>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
-#include <stdio.h>
-#include <fcntl.h>
+#include <assert.h>
+#include <cxxabi.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <pegtl_utility.hh>
+#include <constants.hh>
+#include <utilities.hh>
 
-#include <input_input.hh>
+#include <input_generic.hh>
+#include <input_string.hh>
 
 #include <parse_counter.hh>
 #include <parse_printer.hh>
-#include <parse_debug.hh>
-#include <parse_parser.hh>
+#include <parse_debugger.hh>
+#include <parse_generic.hh>
+#include <parse_string.hh>
 
-#include <rules_combinators.hh>
-#include <rules_atomics.hh>
-#include <rules_ascii.hh>
-#include <rules_specialisations.hh>
+#include <rules_generic.hh>
+#include <rules_string.hh>
+#include <rules_special.hh>
 
 #endif

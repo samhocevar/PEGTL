@@ -11,9 +11,16 @@ namespace
    using namespace pegtl;
 
    template< typename Rule >
+   bool test_parse( const std::string & string )
+   {
+      iterator_input< std::string::const_iterator, ascii_location > in( string.begin(), string.end(), "test" );
+      return dummy_parse< Rule >( in );
+   }
+
+   template< typename Rule >
    void s( const std::string & i )
    {
-      if ( ! parse< Rule, dummy_debug >( i, "test" ) ) {
+      if ( ! test_parse< Rule >( i ) ) {
 	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " failed" );
 	 ++failed;
 	 return;
@@ -24,7 +31,7 @@ namespace
    template< typename Rule >
    void f( const std::string & i )
    {
-      if ( parse< Rule, dummy_debug >( i, "test" ) ) {
+      if ( test_parse< Rule >( i ) ) {
 	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " failed" );
 	 ++failed;
 	 return;
@@ -132,6 +139,7 @@ namespace
       s< seq< plus< abc >, one< 'd' > > >( d );
       s< seq< star< abc >, one< 'd' > > >( d );
       s< seq< rep< abc, 2 >, one< 'd' > > >( d );
+      f< seq< rep< abc, 2 >, abc > >( d );
       s< seq< abc, abc, one< 'd' > > >( d );
 
       s< must< abc > >( t );
@@ -147,12 +155,20 @@ namespace
       f< until< one< 'a' >, one< 'c' > > >( t );
 
       s< ifthen< one< 'a' >, one< 'b' > > >( t );
-      f< ifthen< one< 'a' >, one< 'c' > > >( t );
+      s< ifthen< one< 'a' >, one< 'c' > > >( t );
       s< ifthen< one< 'b' >, one< 'z' > > >( t );
+
+      s< seq< ifthen< one< 'a' >, one< 'b' > >, one< 'c' > > >( t );
+      s< seq< ifthen< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
+      s< seq< ifthen< one< 'b' >, one< 'z' > >, one< 'a' > > >( t );
 
       s< ifmust< one< 'a' >, one< 'b' > > >( t );
       f< ifmust< one< 'a' >, one< 'c' > > >( t );
       f< ifmust< one< 'b' >, one< 'z' > > >( t );
+
+      s< seq< ifmust< one< 'a' >, one< 'b' > >, one< 'c' > > >( t );
+      s< sor< ifmust< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
+      s< sor< ifmust< one< 'b' >, one< 'z' > >, one< 'a' > > >( t );
 
       s< ifthenelse< one< 'a' >, one< 'b' >, one< 'z' > > >( t );
       f< ifthenelse< one< 'a' >, one< 'c' >, one< 'z' > > >( t );
@@ -170,6 +186,7 @@ namespace
 int main()
 {
    simple_tests();
+
    atomic_tests< 'a' >();
    atomic_tests< 'Z' >();
    atomic_tests< '5' >();
@@ -180,11 +197,11 @@ int main()
    atomic_tests< '\0' >();
 
    if ( failed ) {
-      std::cout << "ERROR: tests passed " << passed << " tests failed " << failed << std::endl;
+      std::cout << "ERROR, tests passed=" << passed << " tests failed=" << failed << "!" << std::endl;
       return 1;
    }
    else {
-      std::cout << "OK: all " << passed << " tests passed" << std::endl;
+      std::cout << "OK, all " << passed << " tests passed." << std::endl;
       return 0;
    }
 }

@@ -5,15 +5,15 @@
 #error "Please #include only pegtl.hh (rather than individual pegtl_*.hh files)."
 #endif
 
-#ifndef COHI_PEGTL_COUNTER_HH
-#define COHI_PEGTL_COUNTER_HH
+#ifndef COHI_PEGTL_PARSE_COUNTER_HH
+#define COHI_PEGTL_PARSE_COUNTER_HH
 
 namespace pegtl
 {
    struct counter
    {
       explicit
-      counter( const size_t rule_maximum = 1234567890, const size_t nest_maximum = 12345 )
+      counter( const size_t rule_maximum = 1234567890, const size_t nest_maximum = 123456 )
 	    : m_must( true ),
 	      m_rule_counter( 0 ),
 	      m_nest_counter( 0 ),

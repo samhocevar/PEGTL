@@ -7,3 +7,4 @@ and/or included in WikiSyntax for Google Code Projects in the file
 documentation.wiki in the pegtl distribution archive.
 
 Colin Hirsch
+pegtl@cohi.at

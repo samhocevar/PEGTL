@@ -15,7 +15,7 @@ PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://
 
 ===Status===
 
-We're at PEGTL version 0.20, which mainly includes an overhauled documentation, but also continues the series of smaller enhancements and additions on the road to 1.0; see the changelog at the end of the page.
+Still in the middle of a series of smaller enhancements and additions on the road to 1.0 ... see the changelog at the end of the page.
 
 ===Features===
 
@@ -255,7 +255,7 @@ The _parser_ functions defined in `include/pegtl/parse_filename.hh` take a `std:
 This is the fastest way of parsing a file, and is recommended as long as the virtual address space is not exhausted.
 
 {{{
-      pegtl::basic_parse_file_nothrow< example::grammar >( pegtl::read_string( filename ) );
+      pegtl::basic_parse_file_nothrow< example::grammar >( filename );
 }}}
 
 *Using a Stream*
@@ -274,7 +274,7 @@ Note that the seemingly redundant parts of setting up the stream are required du
 ===Error Messages===
 
 When an error occurs during parsing, i.e. the parser fails for the given input, a parser using a `basic_debug` or `trace_debug` prints a back-trace of the current stack.
-Here is the output from the first example program invoked with the an input that does not match.
+Here is the output from the first example program invoked with an input that does not match.
 
 {{{
 > example/first abc_
@@ -413,14 +413,13 @@ They can be found in the `example` sub-directory, and are included as examples o
 
 =Rule Classes=
 
-This table shows the principal PEGTL expressions, and their symbolic representation.
-The simple rules should be self explaining, the combinators are explained in greater detail below.
+These tables show most of the PEGTL expression constructors, i.e. the _rules_ and their semantics.
 
 ===Basic Rules===
 
 || *Expression* || *Basic Rule* || *Description* ||
 || `e`       || `success`               || Success. ||
-|| `!e`      || `failure`               || Generates local failure. ||
+|| `!e`      || `failure`               || Local failure. ||
 || `R?`      || `opt< R >`              || Match "zero-or-one" times, equivalent to `sor< R, success >`. ||
 || `R*`      || `star< R >`             || Match "zero-or-more" times, equivalent to `opt< plus< R > >`. ||
 || `R+`      || `plus< R >`             || Match "one-or-more" times, equivalent to `seq< R, star< R > >`. ||
@@ -440,6 +439,9 @@ The simple rules should be self explaining, the combinators are explained in gre
 || `R{n}`    || `rep< R, n >`           || Equivalent to `seq< R, ..., R >` with `n` repetitions of `R`. ||
 
 Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the letter epsilon.
+
+Note that the expression syntax for PEGTL extensions to the PEG formalism (`until1`, `until`, `ifthen`, `ifmust`) was invented for this library (i.e. `@`, `%`, `-->` and `->>`).
+The expression syntax with the curly braces for repetition was borrowed from Posix extended regular expressions.
 
 ===String Rules===
 
@@ -473,6 +475,7 @@ Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead 
 || || `space_until_eof` || Equivalent to `until< space, eof >`. ||
 || || `shebang`         || Equivalent to `ifmust< string< '#', '!' >, until_eol >` ||
 || || `identifier`      || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
+|| || `pad_one< 'a', L, R = L >` || Equivalent to `pad< one< 'a' >, L, R >`. ||
 || `\N` || `capture< N >` || Match the string retrieved from its single _state_ argument `s` via `s.find( N )`. ||
 
 Note that class `capture` is both an action and a rule; see `include/pegtl/rules_action.hh` for details.
@@ -572,11 +575,16 @@ When the macro PEGTL_IMPURE_OPTIMISATIONS is defined, additional template specia
 The optimisations elide some _rule_ invocations that are not necessary to decide whether an enclosing _rule_ succeeds for any given input.
 However, if these _rules_ contain _actions_ that perform operations on the parser state, or have global side-effects, the obersvable behaviour will change compared to the non-optimised version.
 
-For example, `at< star< Rule > >` always succeeds, and can therefore be transformed into `success`; however `at< star< Rule > >` will invoke `Rule` at least once, while `success` will never invoke `Rule`.
+For example, `at< star< Rule > >` always succeeds without consuming any input, and can therefore be transformed into `success`; however `at< star< Rule > >` will invoke `Rule` at least once, while `success` will never invoke `Rule`.
 The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compiler flags, by changing `pegtl.hh`, or by defining it in the code that includes `pegtl.hh` before the corresponding include preprocessor directive.
 
 
 =Changelog=
+
+*PEGTL version 0.21*
+
+  * Changed the pretty-printing of rules, this is work in progress (aesthetics).
+  * Fixed the exception that occurred when mmap()ing an empty file (correctness).
 
 *PEGTL version 0.20*
 

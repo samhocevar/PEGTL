@@ -84,6 +84,16 @@ namespace pegtl
 
    // Some simple action classes.
 
+   template< unsigned X >
+   struct apply_notify
+   {
+      template< typename Target >
+      static void apply( const std::string & s, Target & t )
+      {
+	 t.notify( X, s );
+      }
+   };
+
    struct apply_insert
    {
       template< typename Container >

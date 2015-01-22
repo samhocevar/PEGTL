@@ -69,6 +69,7 @@ namespace pegtl
       static value_type value()
       {
 	 const std::string d = demangle< Rule >();
+	 //	 const std::string d = nomespace( demangle< Rule >() );
 	 return value_type( d, d );
       }
 

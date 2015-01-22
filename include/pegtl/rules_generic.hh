@@ -76,7 +76,7 @@ namespace pegtl
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template expr< Rule >() + "{" + s_print() + "}";
-	 st.template update< rep >( n, true );
+	 st.template update< rep >( n, ! st.template name< rep >().compare( 0, 11, "pegtl::rep<" ) );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -295,7 +295,7 @@ namespace pegtl
       static void prepare( Print & st )
       {
 	 st.template insert< Cond >();
-	 const std::string n = st.template name< Cond >() + "@";
+	 const std::string n = "@" + st.template name< Cond >();
 	 st.template update< until1 >( n, true );
       }
 
@@ -324,7 +324,7 @@ namespace pegtl
       {
 	 st.template insert< What, Cond >();
 	 const std::string n = "( " + st.template name< What >() + " % " + st.template name< Cond >() + " )";
-	 st.template update< until >( n, true );
+	 st.template update< until >( n, ! st.template name< until >().compare( 0, 13, "pegtl::until<" ) );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -351,7 +351,7 @@ namespace pegtl
       {
 	 st.template insert< Cond, Thens ... >();
 	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + names< Thens ... >( st, " ", " ", " " )() + " )";
-	 st.template update< cond2impl >( n, true );
+	 st.template update< cond2impl >( n, ! st.template name< cond2impl >().compare( 0, 17, "pegtl::cond2impl<" ) );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -385,7 +385,7 @@ namespace pegtl
       {
 	 st.template insert< Cond, Then, Else >();
 	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + st.template name< Then >() + " / " + st.template name< Else >() + " )";
-	 st.template update< cond3impl >( n, true );
+	 st.template update< cond3impl >( n, ! st.template name< cond3impl >().compare( 0, 17, "pegtl::cond3impl<" ) );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -424,9 +424,8 @@ namespace pegtl
       static void prepare( Print & st )
       {
 	 st.template insert< seq< star< RulePadL >, What, star< RulePadR > > >( true );
-	 const std::string n = st.template name< What >();
 	 const std::string e = st.template expr< What >();
-	 st.template update< pad >( n, e );
+	 st.template update< pad >( e, ! st.template name< pad >().compare( 0, 11, "pegtl::pad<" ) );
       }
    };
    

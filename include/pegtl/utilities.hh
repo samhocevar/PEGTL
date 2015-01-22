@@ -160,6 +160,16 @@ namespace pegtl
       return demangle_impl( typeid( T ).name() );
    }
 
+   std::string nomespace( const std::string & d )
+   {
+      const std::string::size_type n = d.rfind( "::" );
+
+      if ( n == std::string::npos ) {
+	 return d;
+      }
+      return d.substr( n + 2 );
+   }
+
    class file_reader : private nocopy< file_reader >
    {
    public:
@@ -219,14 +229,18 @@ namespace pegtl
    public:
       explicit
       file_mapper( const std::string & filename )
+	    : m_data( 0 ),
+	      m_size( 0 )
       {
 	 const file_reader tmp( filename );
 
-	 m_size = tmp.size();
-
+	 if ( ! ( m_size = tmp.size() ) ) {
+	    return;
+	 }
 	 errno = 0;
+
 	 if ( intptr_t( m_data = static_cast< const char * >( ::mmap( 0, m_size, PROT_READ, MAP_FILE | MAP_PRIVATE, tmp.internal_fd(), 0 ) ) ) == -1 ) {
-	    PEGTL_THROW( "pegtl: unable mmap() file " << filename << " errno " << errno );
+	    PEGTL_THROW( "pegtl: unable to mmap() file " << filename << " errno " << errno );
 	 }
       }
 

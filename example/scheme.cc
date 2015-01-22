@@ -296,7 +296,9 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::smart_parse_string_nothrow< scheme::r6rs >( true, pegtl::read_string( argv[ arg ] ) ) ) {
+      std::ifstream ifs( argv[ arg ], std::ios_base::in | std::ios_base::binary );
+      std::noskipws( ifs );  // Work around broken (?) library design that skips ws even on files opened as binary.
+      if ( pegtl::basic_parse_buffer_nothrow< scheme::r6rs >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
       }
       else {

@@ -15,20 +15,21 @@ PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://
 
 ===Status===
 
-PEGTL version 0.16 is ready, and should work "just fine", with some more fixes and enhancements...
+PEGTL version 0.17 is ready, and should work "just fine"; this version adds support for parsing ranges of input iterators with automatic minimal buffering for back-tracking.
 
 *Features*
 
   * Comprehensive set of parsing rules.
   * Produces very efficient parsers.
-  * Customisable input abstraction.
   * Arbitrary user-defined parser state.
-  * User-defined input abstraction, supplied:
+  * User-defined input abstractions, supplied:
     # strings (and files),
-    # ranges of forward iterators.
-  * User-defined debug abstraction, supplied:
+    # ranges of forward iterators, and
+    # input iterators, w/automatic minimal buffering.
+  * User-defined debug abstractions, supplied:
     # no diagnostics,
     # diagnostics on error,
+    # no diagnostics with fall-back on error,
     # on error plus complete trace of all rule invocations.
   * Expressions/rules and actions embedded in simple C++ code.
   * Diagnostics with (nearly-)pretty-printing of grammar rules.
@@ -199,6 +200,12 @@ Struct `push_number` contains `action< read_number, push_action >`, which invoke
 
 The included file `example/sexpression.cc` shows some further examples.
 
+===Parser Input===
+
+Most examples parse data given as `std::string`, possibly obtained from a file via `pegtl::read_string()`.
+The `scheme.cc` example shows how to use the `buffer_input` class to parse files (or, more generally: ranges of input iterators) without the need of buffering the whole input in a container first.
+This allows the parsing of files etc. that do not fit into memory.
+
 ===Error Messages===
 
 When an error occurs during parsing, i.e. the parser fails for the given input, a parser using the `basic_debug` or `trace_debug` classes as _debug_ will print a backtrace of which rules it was attempting to match at which positions.
@@ -276,7 +283,7 @@ The simple rules should be self explaining, the combinators are explained in gre
 || || `identifier` || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
 || *Expression* || *Action Rules* || *Description* ||
 || || `action_all< R, F >` || On success of `R`, call `F` with matched input and all _state_ objects. ||
-|| || `action_nth< N, R, F >` || On success of `R`, call `F` with matched input and nth _state_ object. ||
+|| || `action_nth< N, R, F >` || On success of `R`, call `F` with matched input and N-1-st _state_ object. ||
 
 Note that the Posix syntax for extended regular expressions is used for the character classes in square brackets.
 
@@ -428,6 +435,10 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
+*PEGTL version 0.17*
+
+  * Added support for ranges of input iterators with automatic minimal buffering (flexibility).
+
 *PEGTL version 0.16*
 
   * Added class `action_nth` (flexibility).
@@ -484,15 +495,6 @@ A better, equivalent, expression is the following.
 *PEGTL version 0.9*
 
   * Changelog starts with PEGTL version 0.9.
-
-===Compatibility===
-
-My guideline regarding compatibility between versions is as follows:
-
-  * Before version 1.0 anything can change, after version 1.0:
-  * Backward compatibility is retained within major versions, with the only exception of critical bugfixes, that are always allowed to break compatibility.
-  * Whenever possible, incompatible changes from major version to major version break the build, i.e. whenever the semantics changes, the name changes too.
-  * Version numbers are independent of how much changed, e.g. version 1.10 might grow the library a lot, whereas 2.0 is just a small, incompatible change.
 
 ===Thank You===
 

@@ -36,6 +36,7 @@
 
 #include <pegtl/input_generic.hh>
 #include <pegtl/input_forward.hh>
+#include <pegtl/input_buffer.hh>
 #include <pegtl/input_string.hh>
 
 #include <pegtl/debug_dummy.hh>
@@ -45,6 +46,7 @@
 #include <pegtl/debug_trace.hh>
 
 #include <pegtl/parse_generic.hh>
+#include <pegtl/parse_buffer.hh>
 #include <pegtl/parse_string.hh>
 
 #include <pegtl/rules_generic.hh>

@@ -366,7 +366,7 @@ An excerpt from `example/calculator.cc` shows how to use _actions_.
 
 See `example/calculator.cc` for how `op_action` is embedded into the grammar.
 
-Note that the grammar follows the canonical paggern of recursive-descent parsers for arithmetic expressions with correct operator precedence.
+Note that the grammar follows the canonical pattern of recursive-descent parsers for arithmetic expressions with correct operator precedence.
 
 ===Unicode Example===
 
@@ -493,15 +493,15 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 || `e`        || `success`               || Success. ||
 || `!e`       || `failure`               || Local failure. ||
 ||            || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
-|| `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails; variadic in `R`. ||
-|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic with *or*-semantics. ||
+|| `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails; variadic. ||
+|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic. ||
 || `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< seq< R, ... >, success >`; variadic in `R`. ||
 || `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R, ... > >`; variadic in `R`. ||
 || `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R, ... > >`; variadic in `R`. ||
 || `$C`       || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
 || `C % R`    || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming); variadic in `R`. ||
 ||            || `must< R, ... >`        || Equivalent to `seq< R, ... >`, but converts local failure of `seq< R, ... >` to global failure; variadic in `R`. ||
-|| `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< seq< R, ... > >`; variadic in `R`. ||
+|| `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< R, ... > >`; variadic in `R`. ||
 || `C --> R`  || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once; variadic in `R`. ||
 ||            || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, seq< not_at< C >, must< T > > >`, but invokes `C` only once. ||
 ||            || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
@@ -656,6 +656,10 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 
 =Changelog=
+
+*PEGTL version 0.24*
+
+  * Fixed some bugs in the pretty-printer; still in the experimental phase (usability).
 
 *PEGTL version 0.23*
 

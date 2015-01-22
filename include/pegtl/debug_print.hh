@@ -216,7 +216,7 @@ namespace pegtl
    {
       template< typename Print >
       names( Print & st, const std::string & a, const std::string & b, const std::string & c )
-	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, "", "", "" )() + c )
+	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, "", b, "" )() + c )
       { }
    };
 
@@ -236,7 +236,7 @@ namespace pegtl
       st.template insert< Head, Rule, Rules ... >();
       const std::string y = demangle< Master >();
       const std::string::size_type z = y.find( ',' );
-      const std::string m = st.template name< Master >();
+      const std::string m = st.template name< Head >();
       const std::string n = names< Rule, Rules ... >( st, "", c, "" );
       st.template update< Master >( a + m + b + n + d, ! m.compare( 0, z, y ) );
    }

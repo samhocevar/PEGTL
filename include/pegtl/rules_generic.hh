@@ -168,7 +168,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 prepare1< sor, Rules ... >( st, "", "( ", " / ", " )", "" );
+	 prepare1< sor, Rule, Rules ... >( st, "", "( ", " / ", " )", "" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >

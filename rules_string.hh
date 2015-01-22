@@ -263,7 +263,8 @@ namespace pegtl
       template< typename Input, typename Debug, typename ... Class >
       static bool s_match( Input & in, Debug & de, Class && ... cl )
       {
-	 return de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, de, std::forward< Class >( cl ) ... );
+	 marker< Input > h( in );
+	 return h( de.template match< one< Char > >( in, std::forward< Class >( cl ) ... ) && string< Chars... >::template s_match( in, de, std::forward< Class >( cl ) ... ) );
       }
    };
 

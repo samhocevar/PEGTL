@@ -36,7 +36,7 @@ namespace calculator
       {
 	 const decltype( s.pull() ) a = s.pull();
 	 const decltype( s.pull() ) b = s.pull();
-	 s.push_back( Operation()( a, b ) );
+	 s.push_back( Operation()( b, a ) );
       }
    };
 

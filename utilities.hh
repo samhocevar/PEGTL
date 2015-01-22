@@ -17,6 +17,10 @@ namespace pegtl
       explicit
       tag( const int )
       { }
+
+      explicit
+      tag( const volatile T * )
+      { }
    };
 
 #define PEGTL_PRINT( MeSSaGe )				\
@@ -187,7 +191,7 @@ namespace pegtl
 	 if ( st.st_size && ( ::read( m_fd, & nrv[ 0 ], nrv.size() ) != int( nrv.size() ) ) ) {
 	    PEGTL_THROW( "pegtl: unable to read() file " << m_fn << " descriptor " << m_fd << " errno " << errno );
 	 }
-	 PEGTL_PRINT( "pegtl: read " << st.st_size << " bytes from file " << m_fn );
+	 //	 PEGTL_PRINT( "pegtl: read " << st.st_size << " bytes from file " << m_fn );
 	 return nrv;
       }
 
@@ -260,6 +264,12 @@ namespace pegtl
 	 }
       }         
       return nrv;             
+   }
+
+   template< typename C, typename T >
+   bool is_in( const T & t, const C & c )
+   {
+      return c.find( t ) != c.end();
    }
 
 } // pegtl

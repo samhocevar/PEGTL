@@ -16,7 +16,7 @@ The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD pa
 
 ===Status===
 
-PEGTL version 0.10 is ready for download, include the R6RS Scheme grammar as example, and should work "just fine".
+PEGTL version 0.11 is ready, and should work "just fine".
 
 *Features*
 
@@ -36,7 +36,7 @@ PEGTL version 0.10 is ready for download, include the R6RS Scheme grammar as exa
   * Expressions/rules and actions embedded in simple C++ code.
   * Diagnostics with (nearly-)pretty-printing of grammar rules.
   * (Some grammar optimisations and checks at compile-time.)
-  * Examples, inluding PEGTL grammar for R6RS Scheme syntax.
+  * Examples, inluding PEGTL grammar for [http://www.r6rs.org/ R6RS] Scheme syntax.
 
 *Compared to Context-Free Grammars*
 
@@ -411,9 +411,14 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
-*PEGTL version 1.0*
+*PEGTL version 0.11*
 
-  * Added Scheme R6RS grammar.
+  * Fixed back-tracking in class `string` (*correctness*).
+  * Fixed order of operands in calculator example (correctness).
+
+*PEGTL version 0.10*
+
+  * Added Scheme [http://www.r6rs.org/ R6RS] grammar.
   * Fixed behaviour at end-of-input (aesthetics).
   * Fixed behaviour and use of class `position` (*correctness*).
   * Changed to lazy initialisation of pretty-printer (performance).
@@ -432,6 +437,10 @@ My guideline regarding compatibility between versions is as follows:
   * Backward compatibility is retained within major versions, with the only exception of critical bugfixes, that are always allowed to break compatibility.
   * Whenever possible, incompatible changes from major version to major version break the build, i.e. whenever the semantics changes, the name changes too.
   * Version numbers are independent of how much changed, e.g. version 1.10 might grow the library a lot, whereas 2.0 is just a small, incompatible change.
+
+===Thank You===
+
+  * Stephan Beal, for the bug report and suggestions.
 
 
 =License=

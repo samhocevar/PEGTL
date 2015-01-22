@@ -11,6 +11,28 @@
 namespace pegtl
 {
    template< typename TopRule, typename Location = ascii_location, typename ... Class >
+   bool dummy_parse_arg( const std::string & string, const int arg, Class && ... cl )
+   {
+      iterator_input< std::string::const_iterator, Location > in( string.begin(), string.end(), "argv[" + to_string( arg ) + "]" );
+      return dummy_parse< TopRule >( in, std::forward< Class >( cl ) ... );
+   }
+
+   template< typename TopRule, typename Location = ascii_location, typename ... Class >
+   bool dummy_parse_file( const std::string & filename, Class && ... cl )
+   {
+      const std::string string = read_string( filename );
+      iterator_input< std::string::const_iterator, Location > in( string.begin(), string.end(), "filename " + filename );
+      return dummy_parse< TopRule >( in, std::forward< Class >( cl ) ... );
+   }
+
+   template< typename TopRule, typename Location = ascii_location, typename ... Class >
+   bool dummy_parse_string( const std::string & string, const std::string & source, Class && ... cl )
+   {
+      iterator_input< std::string::const_iterator, Location > in( string.begin(), string.end(), source );
+      return dummy_parse< TopRule >( in, std::forward< Class >( cl ) ... );
+   }
+
+   template< typename TopRule, typename Location = ascii_location, typename ... Class >
    bool basic_parse_arg( const std::string & string, const int arg, Class && ... cl )
    {
       iterator_input< std::string::const_iterator, Location > in( string.begin(), string.end(), "argv[" + to_string( arg ) + "]" );

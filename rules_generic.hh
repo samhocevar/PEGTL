@@ -413,12 +413,6 @@ namespace pegtl
    struct pad
 	 : seq< star< RulePadL >, What, star< RulePadR > >
    {
-      template< typename ... Dones >
-      struct min
-      {
-	 static const size_t value = What::template min< pad, Dones ... >::value;
-      };
-
       template< typename Print >
       static void s_insert( Print & st )
       {
@@ -432,12 +426,6 @@ namespace pegtl
    template< typename Rule, typename Func >
    struct action
    {
-      template< typename ... Dones >
-      struct min
-      {
-	 static const size_t value = Rule::template min< action, Dones ... >::value;
-      };
-
       typedef typename Rule::key_type key_type;
 
       template< typename Print >

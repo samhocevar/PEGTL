@@ -5,7 +5,7 @@
 
 // First experiment on how to generate tree structures while parsing.
 
-namespace sexpr
+namespace sexpression
 {
    using namespace pegtl;
 
@@ -118,7 +118,7 @@ namespace sexpr
    struct token_action
    {
       template< typename Rule >
-      static void matched( const std::string & token, std::shared_ptr< node_base > & result )
+      static void matched( const std::string & token, std::shared_ptr< node_base > & result ) const
       {
 	 result = std::make_shared< token_node >( token, "no debug information here yet" );
       }
@@ -151,13 +151,13 @@ namespace sexpr
    struct read_file
 	 : until< read_expr, until< separator, eof > > {};
 
-} // sexpr
+} // sexpression
 
 int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
-      std::shared_ptr< sexpr::node_base > result;
-      if ( pegtl::trace_parse_file< sexpr::read_file >( true, argv[ arg ], result ) ) {
+      std::shared_ptr< sexpression::node_base > result;
+      if ( pegtl::trace_parse_file< sexpression::read_file >( true, argv[ arg ], result ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " produced result " << result );
       }
       else {

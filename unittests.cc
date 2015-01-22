@@ -121,6 +121,13 @@ namespace
       f< range< 'A', 'C' > >( t );
 
       typedef string< 'a', 'b', 'c' > abc;
+      typedef string< 'a', 'b', 'd' > abd;
+      typedef string< 'b', 'b', 'd' > bbd;
+
+      s< abc >( t );
+      s< seq< abc, abc, eof > >( t );
+      s< seq< sor< bbd, abc >, abc, eof > >( t );
+      s< seq< sor< abd, abc >, abc, eof > >( t );
 
       s< rep< abc, 1 > >( t );
       s< rep< abc, 2 > >( t );

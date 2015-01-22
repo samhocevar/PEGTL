@@ -292,7 +292,7 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::trace_parse_file< scheme::datum >( false, argv[ arg ] ) ) {
+      if ( pegtl::basic_parse_file< scheme::datum >( argv[ arg ] ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
       }
       else {

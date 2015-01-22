@@ -15,7 +15,7 @@ namespace pegtl
 	 : one_range< '0', '9' >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< digit >( "digit", true );
       }
@@ -26,7 +26,7 @@ namespace pegtl
 	 : one_range< 'a', 'z' >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< lower >( "lower", true );
       }      
@@ -37,7 +37,7 @@ namespace pegtl
 	 : one_range< 'A', 'Z' >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< upper >( "upper", true );
       }      
@@ -48,7 +48,7 @@ namespace pegtl
 	 : sor< lower, upper >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< alpha >( "alpha", true );
       }
@@ -58,28 +58,30 @@ namespace pegtl
    struct ident1
 	 : sor< one< '_' >, alpha > {};
 
-
    struct ident2
 	 : sor< digit, ident1 > {};
-
 
    struct ident
 	 : seq< ident1, star< ident2 > > {};
 
-
-   struct eol
+   struct lf
 	 : one< '\n' > {};
 
+   struct cr
+	 : one< '\r' > {};
 
-   struct eol_or_eof
-	 : sor< eof, eol > {};
+   struct crlf
+	 : seq< cr, lf > {};
+
+   struct eol
+	 : sor< eof, crlf, lf, cr > {};
 
 
    struct space
 	 : one_list< ' ', '\t' >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< space >( "space", true );
       }
@@ -98,7 +100,7 @@ namespace pegtl
 	 : one_list< ' ', '\n', '\r', '\t', '\v' >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< white >( "white", true );
       }
@@ -114,17 +116,14 @@ namespace pegtl
    struct until_eol
 	 : until1< eol > {};
 
-   struct until_eol_or_eof
-	 : until1< eol_or_eof > {};
-
    struct white_until_eof
 	 : until< white, eof > {};
 
-   struct space_until_eol_or_eof
-	 : until< space, eol_or_eof > {};
+   struct space_until_eol
+	 : until< space, eol > {};
 
    struct shebang
-	 : ifmust< string< '#', '!' >, until_eol_or_eof > {};
+	 : ifmust< string< '#', '!' >, until_eol > {};
 
 } // pegtl
 

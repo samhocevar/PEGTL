@@ -20,7 +20,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 const std::string n = B ? "T" : "_";
 	 st.template update< boolean >( n, true );
@@ -51,7 +51,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template expr< Rule >() + "?";
@@ -75,7 +75,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template name< Rule >() + p_i();
@@ -112,7 +112,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template name< Rule >() + "*";
@@ -137,7 +137,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template name< Rule >() + "+";
@@ -212,7 +212,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule, Rules... >();
 	 const std::string n = names< Rule, Rules... >( st, "( ", " / ", " )" );
@@ -244,7 +244,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule, Rules... >();
 	 const std::string n = names< Rule, Rules... >( st, "( ", " ", " )" );
@@ -269,7 +269,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = "&" + st.template name< Rule >();
@@ -294,7 +294,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = "!" + st.template name< Rule >();
@@ -318,7 +318,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template update< eof >( "&eof", true );
       }
@@ -361,7 +361,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >();
 	 const std::string n = st.template name< Rule >() + "@";
@@ -393,7 +393,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< RuleWhat, RuleCond >();
 	 const std::string n = "( " + st.template name< RuleWhat >() + " % " + st.template name< RuleCond >() + " )";
@@ -424,7 +424,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< RuleIf, RuleThen >();
 	 const std::string n = "( " + st.template name< RuleIf >() + ( Must ? " ->> " : " --> " ) + st.template name< RuleThen >() + " )";
@@ -464,7 +464,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< RuleIf, RuleThen, RuleElse >();
 	 const std::string n = "( " + st.template name< RuleIf >() + ( Must ? " ->> " : " --> " ) + st.template name< RuleThen >() + " / " + st.template name< RuleElse >() + " )";

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
+#include <functional>
 
 #include <stdio.h>
 

@@ -117,7 +117,7 @@ namespace pegtl
       {
 	 const std::string n = utils::demangle< Rule >();
 	 if ( m_rules.insert( std::make_pair( key< Rule >(), value_type( n, n ) ) ).second || force ) {
-	    Rule::s_print( *this );
+	    Rule::s_insert( *this );
 	 }
       }
    };

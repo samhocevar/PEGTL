@@ -12,12 +12,11 @@ Grammars are embedded as regular C++ code, and consist of hierarchies of (templa
 These class hierarchies naturally correspond to the inductive definitions of PEGs.
 The library extends on the subject of PEGs with new expression types, and mechanisms to ensure helpful diagnostics in case of parsing errors.
 PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
+The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD parser].
 
 ===Status===
 
-*This library is not finished.*
-
-The actual parsing rules are ready, however the input abstraction needs to be cleaned up, testcases need to be written, the included examples need to be extended, and the documentation completed.
+The actual parsing rules are ready, however the input abstraction needs to be cleaned up, testcases need to be written, the included examples need to be extended, and this documentation completed.
 
 ===Features===
 
@@ -101,6 +100,8 @@ _Rules_ are classes that represent grammar expressions.
 The PEGTL provides rules for all PEG operations, plus atomic rules for characters, strings, some character classes, and some convenience rules.
 _Rules_ are combined to new _rules_ by specialising and/or instantiating the class templates that correspond to non-atomic parsing expressions.
 
+Further on, the _rules_ of a grammar will be extended by _state_ and _actions_ in order to make a parser do more than return a bool: whether the input is recognised.
+
 ===First Example===
 
 For example, consider the _rule_ `first` as provided in `first.cc`.
@@ -159,12 +160,24 @@ It is declared as follows.
 }}}
 
 The return value indicates whether parsing was successful.
+The optional arguments `Class && ... cl` are the _state_ of the parser, see below.
 
-
+It is recommended to be familiar with rvalue references and variadic templates as required for "perfect forwarding" in [http://en.wikipedia.org/wiki/C%2B%2B0x C++0x].
 
 ===State and Actions===
 
-A _parser_ can be invoked with arbitrary _state_ that is recursively passed from _rule_ invocation to _rule_ invocation.
+A _parser_ can be invoked with arbitrary _state_ that is in general passed recursively from _rule_ invocation to _rule_ invocation.
+User-defined _rules_ can use or change the _state_, create or replace it, or choose to not forward it to sub-ordinate _rules_.
+Which purpose the _state_ serves will mainly depend on the _actions_ embedded in the grammar.
+
+An _action_ is a function that, in the definition of the grammar in the C++ source, is associated with a _rule_.
+Every time the _rule_ succeeds, the action is invoked with the portion of the _input_ that matched the _rule_.
+
+There are two typical use cases for _actions_.
+Either they perform a specific final task while parsing, like in the included `calculator.cc` where the expressions are evaluted by the parser "on the fly" using _actions_.
+Or _actions_ can be used to generate an intermediate representation, usually some kind of abstract syntax tree (AST), that is further processed separately, after the parser has finished its job.
+
+The included file `sexpression.cc` is an example for the second type; although no actual further processing beyond dumping the created tree structure takes place.
 
 
 =Combinators=
@@ -401,7 +414,7 @@ A better, equivalent, expression is the following.
 }}}
 
 
-===License===
+=License=
 
 Copyright (c) 2008 Dr. Colin Hirsch
 

@@ -9,6 +9,8 @@ namespace sexpr
 {
    using namespace pegtl;
 
+   // Base class for our tree-like data structure ...
+
    struct node_base
 	 : private utils::nocopy< node_base >
    {
@@ -28,6 +30,10 @@ namespace sexpr
       return o;
    }
 
+   // ... and a derived class for a pair of pointers to nodes,
+   // i.e. we are building lists/trees from pairs as in Lisp or
+   // Scheme ...
+
    struct cons_node
 	 : public node_base
    {
@@ -45,6 +51,11 @@ namespace sexpr
 	 o << "( " << m_car << " " << m_cdr << " )";
       }
    };
+
+   // ... and have one atomic type of node, a token that stores
+   // a string and some debug information; the debug information
+   // will contain the position in the input where the token value
+   // was read (not yet implemented).
 
    struct token_node
 	 : public node_base
@@ -64,6 +75,11 @@ namespace sexpr
       }
    };
 
+   // This class is a combined action and rule; this is too much work, either
+   // I'm not using my library as best as possible yet (which, given its young
+   // age, would be no surprise), or I need to extend the core rules by something
+   // appropriate.
+
    template< typename Head, typename Tail >
    struct make_cons
    {
@@ -73,7 +89,7 @@ namespace sexpr
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Head, Tail >();
       }
@@ -92,46 +108,33 @@ namespace sexpr
 	 if ( ! de.template match< Tail >( in, cdr ) ) {
 	    return p( false );
 	 }
-	 result.reset( new cons_node( car, cdr ) );
+	 result = std::make_shared< cons_node >( car, cdr );
 	 return p( true );
       }
    };
 
-   template< typename Rule >
-   struct make_token
+   // This class is an action that, in the grammar below, is associated with the rule for
+   // a token; it creates a new token and "returns" it in the passed-in "result"; this is
+   // in line with the whole architecture: The caller of a rule must provide the return
+   // value, and pass it as argument.
+
+   struct token_action
    {
-      static std::string key()
+      template< typename Rule >
+      static void matched( const std::string & token, std::shared_ptr< node_base > & result )
       {
-	 return typeid( make_token ).name();
-      }
-
-      template< typename Print >
-      static void s_print( Print & st )
-      {
-	 st.template insert< Rule >();
-      }
-
-      template< typename Input, typename Debug >
-      static bool s_match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
-      {
-	 position< Input > p( in );
-
-	 if ( ! de.template match< Rule >( in ) ) {
-	    return p( false );
-	 }
-	 result.reset( new token_node( std::string( p.here().get(), in.here().get() ), "foo" ) );
-	 return p( true );
+	 result = std::make_shared< token_node >( token, "no debug information here yet" );
       }
    };
 
    struct comment
-	 : ifmust< one< ';' >, until_eol_or_eof > {};
+	 : ifmust< one< ';' >, until_eol > {};
 
    struct separator
 	 : sor< comment, white_plus > {};
 
    struct read_atom
-	 : pad< make_token< plus< digit > >, separator > {};
+	 : pad< action< plus< digit >, token_action >, separator > {};
 
    struct read_expr;
    struct read_tail;

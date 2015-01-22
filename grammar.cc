@@ -11,7 +11,7 @@ namespace pegtl
    struct read_expr;
 
    struct read_comment
-	 : seq< one< '#' >, until_eol_or_eof > {};
+	 : seq< one< '#' >, until_eol > {};
 
    struct read_terminal_char
 	 : ifmust< one< '\'' >, seq< not_one< '\'' >, one< '\'' > > > {};

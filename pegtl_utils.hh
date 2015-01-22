@@ -16,7 +16,7 @@ namespace pegtl
 	 : seq< star< RulePadL >, RuleWhat, star< RulePadR > >
    {
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< seq< star< RulePadL >, RuleWhat, star< RulePadR > > >( true );
 	 const std::string n = st.template name< RuleWhat >();
@@ -40,7 +40,7 @@ namespace pegtl
       }
 
       template< typename Print >
-      static void s_print( Print & st )
+      static void s_insert( Print & st )
       {
 	 st.template insert< Rule >( true );
       }

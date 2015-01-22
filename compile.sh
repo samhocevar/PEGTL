@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Please customise $0 with your favourite editor in case of errors."
+echo "Please customise $0 with your favourite editor [in case of errors]."
 echo
 
 set -ex

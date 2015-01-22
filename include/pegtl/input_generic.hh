@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -67,9 +67,9 @@ namespace pegtl
 	 return c;
       }
 
-      void write_to( std::ostream & ) const
+      void write_to( std::ostream & o ) const
       {
-	 ;
+	 o << '?';
       }
    };
 
@@ -95,6 +95,12 @@ namespace pegtl
    private:
       size_t m_offset;
    };
+
+   inline std::ostream & operator<< ( std::ostream & o, const dummy_location & w )
+   {
+      w.write_to( o );
+      return o;
+   }
 
    inline std::ostream & operator<< ( std::ostream & o, const offset_location & w )
    {

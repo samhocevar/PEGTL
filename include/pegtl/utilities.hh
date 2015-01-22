@@ -198,13 +198,13 @@ namespace pegtl
    }
 
    template< typename T >
-   std::string demangle( const std::string &, const std::string &, const std::string & )
+   std::string demangle( const char *, const char *, const char * )
    {
       return demangle< T >();
    }
 
    template< typename T1, typename T2, typename ... Ts >
-   std::string demangle( const std::string & a, const std::string & b, const std::string & c )
+   std::string demangle( const char * a, const char * b, const char * c )
    {
       return a + demangle< T1 >() + b + demangle< T2, Ts ... >( "", b, "" ) + c;
    }

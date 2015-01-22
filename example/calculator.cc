@@ -39,13 +39,13 @@ namespace calculator
    // to an integer and pushes it on the stack,
    // which must be its only additional state argument.
 
-   // Deriving from action_helper<> is necessary since
+   // Deriving from action_base<> is necessary since
    // version 0.26; the base class takes care of the pretty-
    // printing for diagnostic messages, it is necessary for
    // all action classes that do not derive from a rule class.
 
    struct push_action
-	 : action_helper< push_action >
+	 : action_base< push_action >
    {
       static void apply( const std::string & m, stack_type & s )
       {
@@ -61,7 +61,7 @@ namespace calculator
 
    template< typename Operation >
    struct op_action
-	 : action_helper< op_action< Operation > >
+	 : action_base< op_action< Operation > >
    {
       static void apply( const std::string &, stack_type & s )
       {
@@ -73,7 +73,7 @@ namespace calculator
 
    template<>
    struct op_action< std::divides< value_type > >
-	 : action_helper< op_action< std::divides< value_type > > >
+	 : action_base< op_action< std::divides< value_type > > >
    {
       template< typename State >
       static void apply( const std::string &, State & s )

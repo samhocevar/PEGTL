@@ -26,7 +26,7 @@ namespace scheme
 
    template< typename Lexeme >
    struct padded_lexeme
-	 : pegtl::rule_helper< padded_lexeme< Lexeme >, pegtl::pad< Lexeme, interlexeme_space > > {};
+	 : pegtl::rule_base< padded_lexeme< Lexeme >, pegtl::pad< Lexeme, interlexeme_space > > {};
 
    template< int R > struct digit;
 

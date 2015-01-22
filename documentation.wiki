@@ -8,7 +8,7 @@
 =Introduction=
 
 The Parsing Expression Grammar Template Library (PEGTL) is a C++0x library for creating parsers according to a Parsing Expression Grammar (PEG).
-Grammars are embedded as regular C++ code, and consist of hierarchies of template-instantiations of class templates.
+Grammars are embedded as regular C++ code, created with template programming (not template meta programming).
 These hierarchies naturally correspond to the inductive definition of PEGs.
 The library extends on the subject of PEGs with new expression types, actions that can be attached to grammar rules, and mechanisms to ensure helpful diagnostics in case of parsing errors.
 PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
@@ -304,7 +304,7 @@ The final line gives the final status of the parsing run.
 _Rules_ in error messages are printed in either of the following two formats.
 
   # Just the name of the _rule_, which might correspond to the name of the class, e.g. `digit` or `pegtl::eol`.
-  # The name of the _rule_'s class, followed by `===` and the _rules_ grammar expression, e.g. `example::grammar === ( alpha ( ( alpha / digit ) % pegtl::eol ) )`.
+  # The name of the _rule_'s class, followed by `:=` and the _rules_ grammar expression, e.g. `example::grammar := ( alpha ( ( alpha / digit ) % pegtl::eol ) )`.
 
 For the second form to work correctly when defining new rules in terms of existing rules, e.g. `example::grammar` in the first example above, it is necessary to create new rules by derivation, rather than with a `typedef`.
 (The curious user is encouraged to try the `typedef` instead, just to see the difference.)
@@ -323,13 +323,13 @@ An excerpt from `example/calculator.cc` shows how to use _actions_.
    // to an integer and pushes it on the stack,
    // which must be its only additional state argument.
 
-   // Deriving from action_helper<> is necessary since
+   // Deriving from action_base<> is necessary since
    // version 0.26; the base class takes care of the pretty-
    // printing for diagnostic messages, it is necessary for
    // all action classes that do not derive from a rule class.
 
    struct push_action
-         : action_helper< push_action >
+         : action_base< push_action >
    {
       static void apply( const std::string & m, stack_type & s )
       {
@@ -354,7 +354,7 @@ An excerpt from `example/calculator.cc` shows how to use _actions_.
 
    template< typename Operation >
    struct op_action
-         : action_helper< op_action< Operation > >
+         : action_base< op_action< Operation > >
    {
       static void apply( const std::string &, stack_type & s )
       {
@@ -486,10 +486,10 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 
 ===Basic Rules===
 
-|| *Expression* || *Basic Rule* || *Description* ||
+These rules correspond closely to the standard parsing expression grammar expressions.
+
+|| *Expression* || *Rule Class* || *Description* ||
 || `e`        || `success`               || Success. ||
-|| `!e`       || `failure`               || Local failure. ||
-||            || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
 || `&C`       || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
 || `!C`       || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
 || `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails. ||
@@ -497,6 +497,14 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 || `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< seq< R, ... >, success >`. ||
 || `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R, ... > >`. ||
 || `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R, ... > >`. ||
+
+Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the Greek letter epsilon.
+
+===Extended Rules===
+
+|| *Expression* || *Rule Class* || *Description* ||
+||            || `eof`                   || Matches at "end-of-file" (should really be called "end-of-input"). ||
+|| `!e`       || `failure`               || Local failure. ||
 || `.{C}`     || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
 || `R{C}`     || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming). ||
 ||            || `must< R, ... >`        || Equivalent to `seq< R, ... >`, but converts local failure of `seq< R, ... >` to global failure. ||
@@ -506,22 +514,23 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 || `C -> R / T` || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
 || `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< seq< R, ... >, ..., seq< R, ... > >` with `n` repetitions of `seq< R, ... >`. ||
 || `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< rep< n, R, ... >, rep< m-n, opt< R, ... > >, not_at< seq< R, ... > > >`. ||
-||            || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`. ||
-||            || `padl< T, L >`          || Equivalent to `seq< star< L >, T >`. ||
-||            || `padr< T, R >`          || Equivalent to `seq< T, star< R > >`. ||
-||            || `list< R, S, A = nop >` || Equivalent to `seq< R, star< ifmust< S, ifapply< R, A > > > >`, i.e. to parse non-empty lists of `R` separated by `S`. ||
-||            || `enclose< B, C, E = B, A = nop >` || Equivalent to `ifmust< B, ifapply< until< at< E >, C >, A >, E >`. ||
 
-Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the letter epsilon.
+Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the Greek letter epsilon.
 
 Note that the expression syntax for PEGTL extensions to the PEG formalism like `until`, `ifthen`, or `ifmust` was "invented" for this library.
 
-Note that some of the following _rules_ `foo< X >` are documented as *variadic in `X`*, which means that an arbitrary sequence of template arguments can be given for `X`.
-If not documented otherwise, the semantics of these _rules_ `foo` is equivalent to `foo< seq< X1, ..., Xn > >`.
+===Convenience Rules===
+
+|| *Rule Class* || *Description* ||
+|| `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`. ||
+|| `padl< T, L >`          || Equivalent to `seq< star< L >, T >`. ||
+|| `padr< T, R >`          || Equivalent to `seq< T, star< R > >`. ||
+|| `list< R, S, A = nop >` || Equivalent to `seq< R, star< ifmust< S, ifapply< R, A > > > >`, i.e. to parse non-empty lists of `R` separated by `S`. ||
+|| `enclose< B, C, E = B, A = nop >` || Equivalent to `ifmust< B, ifapply< until< at< E >, C >, A >, E >`. ||
 
 ===String Rules===
 
-|| *Expression* || *String Rule* || *Description* ||
+|| *Expression* || *Rule Class* || *Description* ||
 || `.`          || `any` || Match any character. ||
 || `"a"`        || `one< 'a' >` || Match given character; same as below. ||
 || `"[abc]"`    || `one< 'a', 'b', 'c', ... >` || Match one of the given characters; variadic. ||
@@ -557,13 +566,13 @@ With a `using namespace pegtl::ascii`, the definition of `string` _rules_ can be
 
 ===Action Rules===
 
-|| *Expression*     || *Action Rule*                || *Description* ||
+|| *Expression*     || *Rule Class*                 || *Description* ||
 || `$F ...`         || `apply< F, ... >`            || Unconditionally apply all actions `F` to the empty string and all _state_ objects. ||
 || `( R | $F ... )` || `ifapply< R, F, ... >`       || On success of `R`, apply all actions `F` to matched sub-string and all _state_ objects. ||
 
 ===Actual Actions===
 
-|| *Expression*    || *Action*                  || *Description* ||
+|| *Expression*    || *Action Class*            || *Description* ||
 || `$nop`          || `nop`                     || Action that does nothing. ||
 || `$N:F ...`      || `nth< N, F, ... >`        || Apply all actions `F` to matched sub-string and N+1-st _state_ object. ||
 ||                 || `insert`                  || Calls `c.insert( c.end(), s )`, given matched sub-string `s` and a single _state_ argument `c`. ||
@@ -650,6 +659,11 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 =Changelog=
 
+*PEGTL version 0.28*
+
+  * Optimised object file footprint of class `printer` and some related functions.
+  * Renamed class `rule_helper` to `rule_base` and `action_helper` to `action_base`.
+
 *PEGTL version 0.27*
 
   * Changed the type of exceptions thrown by the library to `pegtl::parse_error`.
@@ -657,7 +671,7 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
   * Changed logging to use a virtual method on the _debug_ class inherited from common _debug_ base class.
   * Removed all `*_parse_*_nothrow()` _parse_ functions.
   * Removed the `_throws` substring from all remaining _parse_ functions and changed the return type to `void`.
-  * Added convenience classes `file_base`, `ascii_file_base` and `dummy_file_base` for custom parse functions.
+  * Added convenience classes `file_input`, `ascii_file_input` and `dummy_file_input` for custom parse functions.
 
 *PEGTL version 0.26*
 
@@ -798,7 +812,7 @@ The last of these changes effectively requires custom _action_ classes to derive
   * Christopher Diggins and the [http://yard-parser.sourceforge.net YARD parser].
   * Stephan Beal, for the bug reports, suggestions and discussions.
   * Johannes Overmann, for his invaluable [http://jo.ath.cx/soft/streplace/ streplace] command-line tool.
-  * Daniel Frey, for the bug reports, suggestions and discussions.
+  * Daniel Frey, for the bug reports, suggestions and enhancements and discussions.
 
 =License=
 

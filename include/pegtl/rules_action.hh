@@ -76,7 +76,7 @@ namespace pegtl
    };
 
    template< typename Func >
-   struct action_helper
+   struct action_base
    {
       typedef Func key_type;
 
@@ -115,7 +115,7 @@ namespace pegtl
       static void prepare( Print & st )
       {
 	 const std::string n = to_string( N );
-	 prepare1< nth, Funcs ... >( st, n + ":", "", " $" + n + ":", "", "" );
+	 prepare1< nth, Funcs ... >( st, ( n + ":" ).c_str(), "", ( " $" + n + ":" ).c_str(), "", "" );
       }
 
       template< typename State, typename ... States >

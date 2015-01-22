@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -167,6 +167,26 @@ namespace pegtl
    {
       static_assert( !sizeof( Rule ), "pegtl: illegal expression Rule*+ (allows iteration without progress = infinite loop)" );
    };
+
+   template< typename Rule, typename PadL, typename PadR = PadL >
+   struct pad
+         : rule_base< pad< Rule, PadL, PadR >, seq< star< PadL >, Rule, star< PadR > > > {};
+
+   template< typename Rule, typename PadL >
+   struct padl
+         : rule_base< padl< Rule, PadL >, seq< star< PadL >, Rule > > {};
+
+   template< typename Rule, typename PadR >
+   struct padr
+         : rule_base< padr< Rule, PadR >, seq< Rule, star< PadR > > > {};
+
+   template< typename Rule, typename Glue, typename Action = nop >
+   struct list
+         : rule_base< list< Rule, Glue, Action >, seq< Rule, star< ifmust< Glue, ifapply< Rule, Action > > > > > {};
+
+   template< typename Begin, typename Body, typename End = Begin, typename Action = nop >
+   struct enclose
+	 : rule_base< enclose< Begin, Body, End, Action >, ifmust< Begin, ifapply< until< at< End >, Body >, Action >, End > > {};
 
 } // pegtl
 

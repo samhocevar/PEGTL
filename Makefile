@@ -11,7 +11,7 @@ WARNINGS := -Wall -Wextra
 OPTIMISE := -O1
 # -fno-enforce-eh-specs
 
-CXXFLAGS := $(WARNINGS) $(OPTIMISE)
+CXXFLAGS := -march=native $(WARNINGS) $(OPTIMISE)
 
 .PHONY: all clean
 

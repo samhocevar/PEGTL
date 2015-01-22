@@ -18,7 +18,7 @@ namespace pegtl
       typedef typename Input::location_type Location;
 
       basic_guard( Location && w, counter & t )
-	    : m_location( w ),
+	    : m_location( std::move( w ) ),
 	      m_counter( t )
       {
 	 m_counter.enter();
@@ -29,7 +29,7 @@ namespace pegtl
 	 m_counter.leave();
       }
 
-      bool operator() ( const bool result, const bool must )
+      bool operator() ( const bool result, const bool must ) const
       {
 	 if ( ( ! result ) && must ) {
 	    PEGTL_THROW( "parsing aborted at " << m_location );
@@ -59,7 +59,7 @@ namespace pegtl
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )
       {
-	 basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter );
+	 const basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter );
 
 	 try {
 	    return d( Rule::template match< Must >( in, * this, std::forward< States >( st ) ... ), Must );

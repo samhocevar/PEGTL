@@ -1,4 +1,4 @@
-// Copyright (c) 2008 by Dr. Colin Hirsch 
+// Copyright (c) 2008 by Dr. Colin Hirsch
 // Please see license.txt for license.
 
 #ifndef COHI_PEGTL_HH
@@ -10,37 +10,10 @@
 
 namespace pegtl
 {
-   template< typename... Rules > struct insert_helper;
-
-   template<>
-   struct insert_helper<>
+   class printer
    {
-      template< typename Print >
-      static void insert( Print &, const bool )
-      { }
-   };
-
-   template< typename Rule, typename... Rules >
-   struct insert_helper< Rule, Rules... >
-   {
-      template< typename Print >
-      static void insert( Print & st, const bool force )
-      {
-	 st.template insert_impl< Rule >( force );
-	 insert_helper< Rules... >::insert( st, force );
-      }
-   };
-
-   struct printer
-   {
-      typedef void ( * inserter ) ( printer & );
-
-      template< typename TopRule >
-      printer( const tag< TopRule > & )
-	    : m_top_inserter( & TopRule::template prepare< printer > ),
-	      m_top_rule_key( key< TopRule >() ),
-	      m_top_rule_value( value< TopRule >() )
-      { }
+   private:
+      typedef void ( printer::*inserter ) ( bool );
 
       struct value_type
       {
@@ -59,8 +32,14 @@ namespace pegtl
       typedef std::string key_type;
       typedef std::map< key_type, value_type > map_type;
 
+   public:
+      template< typename TopRule >
+      printer( const tag< TopRule > & )
+               : m_top_inserter( & printer::insert< TopRule > )
+      { }
+
       template< typename Rule >
-      static key_type key()
+      static const char* key()
       {
 	 return typeid( typename Rule::key_type ).name();
       }
@@ -68,21 +47,14 @@ namespace pegtl
       template< typename Rule >
       static value_type value()
       {
-	 const std::string d = demangle< Rule >();
+	 const std::string& d = demangle< Rule >();
 	 return value_type( d, d );
       }
 
       template< typename Rule >
       std::string rule()
       {
-	 const value_type & e = find< Rule >();
-
-	 if ( e.m_name.empty() || ( e.m_name == e.m_expr ) ) {
-	    return e.m_name;
-	 }
-	 else {
-	    return e.m_name + " := " + e.m_expr;
-	 }
+         return rule( find< Rule >() );
       }
 
       template< typename Rule >
@@ -97,32 +69,30 @@ namespace pegtl
 	 return find< Rule >().m_expr;
       }
 
-      template< typename... Rules >
+      template< typename Rule >
       void insert( const bool force = false )
       {
-	 insert_helper< Rules... >::insert( *this, force );
+	 if ( m_rules.insert( map_type::value_type( key< Rule >(), value< Rule >() ) ).second || force ) {
+	    Rule::prepare( *this );
+	 }
+      }
+
+      template< typename Rule1, typename Rule2, typename... Rules >
+      void insert( const bool force = false )
+      {
+	 insert< Rule1 >( force );
+	 insert< Rule2, Rules... >( force );
       }
 
       template< typename Rule >
       void update( const std::string & expr, const bool both = false )
       {
-	 if ( both ) {
-	    m_rules[ key< Rule >() ] = value_type( expr, expr );
-	 }
-	 else {
-	    m_rules[ key< Rule >() ].m_expr = expr;
-	 }
-      }
-
-      template< typename Rule >
-      void update( const std::string & name, const std::string & expr )
-      {
-	 m_rules[ key< Rule >() ] = value_type( name, expr );
+         update( key< Rule >(), expr, both );
       }
 
       void print_rules()
       {
-	 ensure_insert();
+         ensure_insert();
 
 	 for ( map_type::const_iterator i = m_rules.begin(); i != m_rules.end(); ++i ) {
 	    if ( i->second.m_name == i->second.m_expr ) {
@@ -136,78 +106,99 @@ namespace pegtl
 
    private:
       map_type m_rules;
+
       const value_type m_default_value;
 
       const inserter m_top_inserter;
-      const key_type m_top_rule_key;
-      const value_type m_top_rule_value;
 
-   public:
       void ensure_insert()
       {
 	 if ( m_rules.empty() ) {
-	    m_rules.insert( std::make_pair( m_top_rule_key, m_top_rule_value ) );
-	    ( *m_top_inserter )( *this );
-	 }
-      }
-
-      template< typename Rule >
-      void insert_impl( const bool force = false )
-      {
-	 if ( m_rules.insert( std::make_pair( key< Rule >(), value< Rule >() ) ).second || force ) {
-	    Rule::prepare( *this );
+	    ( this->*m_top_inserter )( true );
 	 }
       }
 
       template< typename Rule >
       const value_type & find()
       {
-	 ensure_insert();
+         return find( key< Rule >() );
+      }
 
-	 const typename map_type::const_iterator i = m_rules.find( key< Rule >() );
+      const value_type & find( const char* key )
+      {
+         ensure_insert();
 
-	 if ( i == m_rules.end() ) {
-	    return m_default_value;
+         const map_type::const_iterator i = m_rules.find( key );
+	 if( i == m_rules.end() ) {
+            return m_default_value;
 	 }
 	 return i->second;
+      }
+
+      std::string rule( const value_type& e )
+      {
+	 if ( e.m_name.empty() || ( e.m_name == e.m_expr ) ) {
+	    return e.m_name;
+	 }
+	 else {
+	    return e.m_name + " := " + e.m_expr;
+	 }
+      }
+
+      void update( const char* key, const std::string & expr, const bool both )
+      {
+	 if ( both ) {
+            m_rules[ key ] = value_type( expr, expr );
+	 }
+	 else {
+	    m_rules[ key ].m_expr = expr;
+	 }
       }
    };
 
    template< typename Rule, typename Print >
-   std::string names( Print & st, const std::string &, const std::string &, const std::string & )
+   inline const std::string & names( Print & st, const char *, const char *, const char * )
    {
       return st.template name< Rule >();
    }
 
    template< typename Rule1, typename Rule2, typename ... Rules, typename Print >
-   std::string names( Print & st, const std::string & a, const std::string & b, const std::string & c )
+   inline std::string names( Print & st, const char * a, const char * b, const char * c )
    {
-      return a + names< Rule1 >( st, "", "", "" ) + b + names< Rule2, Rules ... >( st, "", b, "" ) + c;
+     std::string nrv = a;
+     nrv += names< Rule1 >( st, "", "", "" );
+     nrv += b;
+     nrv += names< Rule2, Rules ... >( st, "", b, "" );
+     nrv += c;
+     return nrv;
    }
 
    template< typename Master, typename Rule, typename ... Rules, typename Print >
-   void prepare1( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d, const std::string & e )
+   inline void prepare1( Print & st, const char * a, const char * b, const char * c, const char * d, const char * e )
    {
       st.template insert< Rule, Rules ... >();
-      const std::string y = demangle< Master >();
-      const std::string m = st.template name< Master >();
-      const std::string n = names< Rule, Rules ... >( st, b, c, d );
-      st.template update< Master >( a + n + e, m == y );
+      std::string s = a;
+      s += names< Rule, Rules ... >( st, b, c, d );
+      s += e;
+      const bool u = demangle< Master >() == st.template name< Master >();
+      st.template update< Master >( s , u );
    }
 
    template< typename Master, typename Head, typename Rule, typename ... Rules, typename Print >
-   void prepare2( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d )
+   inline void prepare2( Print & st, const char * a, const char * b, const char * c, const char * d )
    {
       st.template insert< Head, Rule, Rules ... >();
-      const std::string y = demangle< Master >();
-      const std::string m = st.template name< Master >();
-      const std::string h = st.template name< Head >();
-      const std::string n = names< Rule, Rules ... >( st, "", c, "" );
-      st.template update< Master >( a + h + b + n + d, m == y );
+      std::string s = a;
+      s += st.template name< Head >();
+      s += b;
+      s += names< Rule, Rules ... >( st, "", c, "" );
+      s += d;
+      const bool u = demangle< Master >() == st.template name< Master >();
+      st.template update< Master >( s, u );
    }
 
    template< typename TopRule >
-   void print_rules()
+   inline void print_rules()
    {
       printer( tag< TopRule >() ).print_rules();
    }

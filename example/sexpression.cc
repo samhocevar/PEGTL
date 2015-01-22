@@ -116,7 +116,7 @@ namespace sexpression
    // value, and pass it as argument.
 
    struct token_action
-	 : action_helper< token_action >
+	 : action_base< token_action >
    {
       static void apply( const std::string & token, std::shared_ptr< node_base > & result )
       {

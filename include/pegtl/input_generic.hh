@@ -23,46 +23,6 @@ namespace pegtl
    // the destructor is the most important 'thing' for exception safety, not
    // the try-catch block, as in some other languages I do not want to name).
 
-   // Class marker remembers (marks) the current position in the input; a
-   // 'commit' is a nop, a 'rollback' rewinds to the initial position.
-
-   template< typename Input >
-   class marker
-   {
-   public:
-      explicit
-      marker( Input & in )
-	    : m_input( & in ),
-	      m_iterator( in.here() )
-      { }
-
-      ~marker()
-      {
-	 if ( m_input ) {
-	    m_input->jump( m_iterator );
-	 }
-      }
-
-      typedef typename Input::iterator iterator;
-
-      iterator here() const
-      {
-	 return m_iterator;
-      }
-
-      bool operator() ( const bool success )
-      {
-	 if ( success ) {
-	    m_input = 0;
-	 }
-	 return success;
-      }
-
-   private:
-      Input * m_input;
-      const typename Input::iterator m_iterator;
-   };
-
    // Class character acts as proxy to the current character in the input;
    // a 'commit' consumes the character (thereby moving the input to the next
    // position), a 'rollback' is a nop.

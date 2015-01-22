@@ -12,11 +12,10 @@ Grammars are embedded as regular C++ code, and consist of template hierarchies o
 These hierarchies naturally correspond naturally to the inductive definitions of PEGs.
 The library extends on the subject of PEGs with new expression types, and mechanisms to ensure helpful diagnostics in case of parsing errors.
 PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
-The PEGTL is heavily inspired by the [http://yard-parser.sourceforge.net YARD parser].
 
 ===Status===
 
-PEGTL version 0.15 is ready, and should work "just fine"; it continues with some smaller improvements and streamlining.
+PEGTL version 0.16 is ready, and should work "just fine", with some more fixes and enhancements...
 
 *Features*
 
@@ -25,10 +24,8 @@ PEGTL version 0.15 is ready, and should work "just fine"; it continues with some
   * Customisable input abstraction.
   * Arbitrary user-defined parser state.
   * User-defined input abstraction, supplied:
-    # files,
-    # strings,
-    # command line arguments,
-    # iterator ranges.
+    # strings (and files),
+    # ranges of forward iterators.
   * User-defined debug abstraction, supplied:
     # no diagnostics,
     # diagnostics on error,
@@ -63,10 +60,6 @@ Support for run-time polymorphism might be included in the future if required.
 The PEGTL currently has explicit support ASCII input data only.
 Support for UTF-8 and raw binary data is likely to be included in the near future.
 Other character sets and encodings will probably never be supported.
-
-The PEGTL uses straight-forward back-tracking which reads parts of the input multiple times.
-Currently it is not possible to use a PEGTL parser with an input iterator without buffering the whole input in a dedicated buffer, which is not very suitable for very large inputs.
-Support for very large inputs might be included in the future.
 
 ===Requirements===
 
@@ -197,7 +190,7 @@ Whenever the parser recognises (the string representation of) a number, it pushe
          : seq< opt< list< '+', '-' > >, plus< digit > > {};
 
    struct push_number
-         : pad< action< read_number, push_action >, space > {};
+         : pad< action_all< read_number, push_action >, space > {};
 }}}
 
 Struct `push_action` is the user-defined action that converts the given string to an integer, and pushes it onto the supplied stack.
@@ -259,7 +252,6 @@ The simple rules should be self explaining, the combinators are explained in gre
 || || `ifthenelse< C, R, T >` || PEGTL convenience extension. ||
 || || `ifmustelse< C, R, T >` || PEGTL convenience extension. ||
 || || `pad< T, L, R = L >` || PEGTL convenience extension. ||
-|| || `action< T, F >` || PEGTL way of attaching behaviour to a parsing rule. ||
 || *Expression* || *String Rules* || *Description* ||
 || `.` || `any` || Match any character. ||
 || `"a"` || `one< 'a' >` || Match character. ||
@@ -282,6 +274,9 @@ The simple rules should be self explaining, the combinators are explained in gre
 || `[[:alnum:]]` || `alnum` || Match any upper- or lower-case letter or digit. ||
 || `[[:xdigit:]]` || `xdigit` || Match any hexadecimal digit, upper- or lower-case. ||
 || || `identifier` || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
+|| *Expression* || *Action Rules* || *Description* ||
+|| || `action_all< R, F >` || On success of `R`, call `F` with matched input and all _state_ objects. ||
+|| || `action_nth< N, R, F >` || On success of `R`, call `F` with matched input and nth _state_ object. ||
 
 Note that the Posix syntax for extended regular expressions is used for the character classes in square brackets.
 
@@ -433,6 +428,18 @@ A better, equivalent, expression is the following.
 
 ===Changelog===
 
+*PEGTL version 0.16*
+
+  * Added class `action_nth` (flexibility).
+  * Renamed class `action` to `action_all` (consistency).
+  * Changed class `marker` to a nop when "must" is true (performance).
+  * Changed `dummy_debug` to interpret "must" tracking (consistency).
+  * Fixed typo in name of `PEGTL_IMPURE_OPTIMISATIONS` macro (correctness).
+  * Made the marker class a sub-class of the _input_ class (simplicity).
+  * Renamed some of classes named `*white*`, `*space*`, or `*blank*` (consistency).
+  * Fixed some issues in the R6RS example (CFG to PEG mismatch, only first datum).
+  * Added missing template arguments to `smart_parse_*` functions (correctness).
+
 *PEGTL version 0.15*
 
   * Removed some small superfluous functions (less is more).
@@ -489,7 +496,8 @@ My guideline regarding compatibility between versions is as follows:
 
 ===Thank You===
 
-  * Stephan Beal, for the bug reports, and suggestions and discussions for future development.
+  * Christopher Diggins and the [http://yard-parser.sourceforge.net YARD parser].
+  * Stephan Beal, for the bug reports, suggestions and discussions.
 
 
 =License=

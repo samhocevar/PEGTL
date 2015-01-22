@@ -20,10 +20,16 @@ namespace pegtl
       dummy_debug( const tag< TopRule > & )
       { }
 
-      template< bool Must, typename Rule, typename Input, typename... Class >
-      bool match( Input & in, Class && ... cl )
+      template< bool Must, typename Rule, typename Input, typename ... States >
+      bool match( Input & in, States && ... st )
       {
-	 return Rule::template s_match< Must >( in, *this, std::forward< Class >( cl ) ... );
+	 if ( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ) ) {
+	    return true;
+	 }
+	 else if ( Must ) {
+	    PEGTL_THROW( "pegtl: required rule " << demangle< Rule >() << " failed" );
+	 }
+	 return false;
       }
    };
 

@@ -11,6 +11,65 @@
 
 namespace pegtl
 {
+   // Class marker remembers (marks) the current position in the input; a
+   // 'commit' is a nop, a 'rollback' rewinds to the initial position; the
+   // 'Must' flag is used to optimise: if a rule must succeed (or else an
+   // exception aborts the parser), then we don't need to enable this kind
+   // of backtracking.
+
+   template< bool Must, typename Input > class forward_marker;
+
+   template< typename Input >
+   class forward_marker< true, Input >
+   {
+   public:
+      explicit
+      forward_marker( Input & )
+      { }
+
+      bool operator() ( const bool success )
+      {
+	 return success;
+      }
+   };
+
+   template< typename Input >
+   class forward_marker< false, Input >
+   {
+   public:
+      explicit
+      forward_marker( Input & in )
+	    : m_input( & in ),
+	      m_iterator( in.here() )
+      { }
+
+      ~forward_marker()
+      {
+	 if ( m_input ) {
+	    m_input->jump( m_iterator );
+	 }
+      }
+
+      typedef typename Input::iterator iterator;
+
+      iterator here() const
+      {
+	 return m_iterator;
+      }
+
+      bool operator() ( const bool success )
+      {
+	 if ( success ) {
+	    m_input = 0;
+	 }
+	 return success;
+      }
+
+   private:
+      Input * m_input;
+      const typename Input::iterator m_iterator;
+   };
+
    // Classes for input given as range of forward iterators.
 
    template< typename Iterator, typename Location >
@@ -90,6 +149,15 @@ namespace pegtl
       typedef Location location_type;
       typedef forward_iterator< Iterator, Location > iterator;
       typedef typename std::iterator_traits< Iterator >::value_type value_type;
+
+      template< bool Must >
+      struct marker : public forward_marker< Must, forward_input >
+      {
+	 explicit
+	 marker( forward_input & input )
+	       : forward_marker< Must, forward_input >( input )
+	 { }
+      };
 
       bool eof() const
       {

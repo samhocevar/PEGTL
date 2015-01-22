@@ -68,16 +68,16 @@ namespace pegtl
 	 m_trace = trace;
       }
 
-      template< bool Must, typename Rule, typename Input, typename ... Class >
-      bool match( Input & in, Class && ... cl )
+      template< bool Must, typename Rule, typename Input, typename ... States >
+      bool match( Input & in, States && ... st )
       {
 	 if ( m_trace ) {
 	    trace_guard< Rule, Input > d( in, m_counter, m_printer );
-	    return d( Rule::template s_match< Must >( in, *this, std::forward< Class >( cl ) ... ), Must );
+	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
 	 else {
 	    basic_guard< Rule, Input > d( in.location(), m_counter, m_printer );
-	    return d( Rule::template s_match< Must >( in, *this, std::forward< Class >( cl ) ... ), Must );
+	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
       }
 

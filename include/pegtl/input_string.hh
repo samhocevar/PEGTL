@@ -19,6 +19,11 @@ namespace pegtl
 	      m_column( 1 )
       { }
 
+      ascii_location( const size_t line, const size_t column )
+	    : m_line( line ),
+	      m_column( column )
+      { }
+
       int operator() ( const int c )
       {
 	 if ( c == '\n' ) {

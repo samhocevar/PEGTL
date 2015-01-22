@@ -48,6 +48,7 @@
 #include <pegtl/parse_string.hh>
 
 #include <pegtl/rules_generic.hh>
+#include <pegtl/rules_action.hh>
 #include <pegtl/rules_string.hh>
 #include <pegtl/rules_special.hh>
 

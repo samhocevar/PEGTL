@@ -32,7 +32,7 @@ namespace
    void f( const std::string & i )
    {
       if ( test_parse< Rule >( i ) ) {
-	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " failed" );
+	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " succeeded" );
 	 ++failed;
 	 return;
       }

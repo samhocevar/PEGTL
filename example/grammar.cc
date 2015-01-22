@@ -49,7 +49,7 @@ namespace grammar
 	 : sor< read_comment, read_rule > {};
 
    struct read_file
-	 : until< read_line, white_until_eof > {};
+	 : until< read_line, space_until_eof > {};
 
 } // grammar
 

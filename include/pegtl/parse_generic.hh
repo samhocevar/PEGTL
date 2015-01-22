@@ -20,10 +20,10 @@ namespace pegtl
 
    // The following two functions are the central wrappers used for parsing.
 
-   template< typename TopRule, typename Input, typename Debug, typename ... Class >
-   bool parse_throws( Input & in, Debug & de, Class && ... cl )
+   template< typename TopRule, typename Input, typename Debug, typename ... States >
+   bool parse_throws( Input & in, Debug & de, States && ... st )
    {
-      if ( ! de.template match< true, TopRule >( in, std::forward< Class >( cl ) ... ) )
+      if ( ! de.template match< true, TopRule >( in, std::forward< States >( st ) ... ) )
       {
 	 // This is not particularly informative, however the only way to trigger this is when
 	 // the dummy_debug is used, in which case the user was interested in speed, not good
@@ -34,12 +34,12 @@ namespace pegtl
       return true;
    }
 
-   template< typename TopRule, typename Input, typename Debug, typename ... Class >
-   bool parse_nothrow( Input & in, Debug & de, Class && ... cl )
+   template< typename TopRule, typename Input, typename Debug, typename ... States >
+   bool parse_nothrow( Input & in, Debug & de, States && ... st )
    {
       try
       {
-	 return de.template match< true, TopRule >( in, std::forward< Class >( cl ) ... );
+	 return de.template match< true, TopRule >( in, std::forward< States >( st ) ... );
       }
       catch ( std::exception & e )
       {
@@ -58,52 +58,52 @@ namespace pegtl
 
    // Parse with a dummy_debug (full speed, no diagnostics).
    
-   template< typename TopRule, typename Input, typename ... Class >
-   bool dummy_parse_throws( Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool dummy_parse_throws( Input & in, States && ... st )
    {
       dummy_debug de( tag< TopRule >( 0 ) );
-      return parse_throws< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_throws< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool dummy_parse_nothrow( Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool dummy_parse_nothrow( Input & in, States && ... st )
    {
       dummy_debug de( tag< TopRule >( 0 ) );
-      return parse_nothrow< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_nothrow< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
    // Parse with a dummy_debug (slower, diagnostics on error).
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool basic_parse_throws( Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool basic_parse_throws( Input & in, States && ... st )
    {
       basic_debug de( tag< TopRule >( 0 ) );
-      return parse_throws< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_throws< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool basic_parse_nothrow( Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool basic_parse_nothrow( Input & in, States && ... st )
    {
       basic_debug de( tag< TopRule >( 0 ) );
-      return parse_nothrow< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_nothrow< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
    // Parse with a trace_debug (fixed overhead depending on the grammar,
    // diagnostics on error, plus optionally trace of all rule invocations).
    // The first bool argument called trace enables or disables rule tracing.
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool trace_parse_throws( const bool trace, Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool trace_parse_throws( const bool trace, Input & in, States && ... st )
    {
       trace_debug de( tag< TopRule >( 0 ), trace );
-      return parse_throws< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_throws< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool trace_parse_nothrow( const bool trace, Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool trace_parse_nothrow( const bool trace, Input & in, States && ... st )
    {
       trace_debug de( tag< TopRule >( 0 ), trace );
-      return parse_nothrow< TopRule >( in, de, std::forward< Class >( cl ) ... );
+      return parse_nothrow< TopRule >( in, de, std::forward< States >( st ) ... );
    }
 
    // Parse with a dummy_debug and, when that fails, use a trace_debug, i.e.
@@ -114,16 +114,16 @@ namespace pegtl
    // for the application to copy'n'paste this function with an appropriate
    // preparation of the state before starting the second run...!
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool smart_parse_throws( const bool trace, Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool smart_parse_throws( const bool trace, Input & in, States && ... st )
    {
-      return dummy_parse_nothrow( in, std::forward< Class >( cl ) ... ) || trace_parse_throws( trace, in.rewind(), std::forward< Class >( cl ) ... );
+      return dummy_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... ) || trace_parse_throws< TopRule >( trace, in.rewind(), std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename Input, typename ... Class >
-   bool smart_parse_nothrow( const bool trace, Input & in, Class && ... cl )
+   template< typename TopRule, typename Input, typename ... States >
+   bool smart_parse_nothrow( const bool trace, Input & in, States && ... st )
    {
-      return dummy_parse_nothrow( in, std::forward< Class >( cl ) ... ) || trace_parse_nothrow( trace, in.rewind(), std::forward< Class >( cl ) ... );
+      return dummy_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... ) || trace_parse_nothrow< TopRule >( trace, in.rewind(), std::forward< States >( st ) ... );
    }
 
 } // pegtl

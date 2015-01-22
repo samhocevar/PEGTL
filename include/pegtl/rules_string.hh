@@ -20,8 +20,8 @@ namespace pegtl
 	 st.template update< any >( ".", true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -43,8 +43,8 @@ namespace pegtl
 	 st.template update< one >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -70,8 +70,8 @@ namespace pegtl
 	 st.template update< not_one >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -115,8 +115,8 @@ namespace pegtl
 	 st.template update< list >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {      
 	 if ( in.eof() ) {
 	    return false;
@@ -151,8 +151,8 @@ namespace pegtl
 	 st.template update< not_list >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {      
 	 if ( in.eof() ) {
 	    return false;
@@ -182,8 +182,8 @@ namespace pegtl
 	 st.template update< range >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression range< C, D > where C is greater than D" );
 	 if ( in.eof() ) {
@@ -206,8 +206,8 @@ namespace pegtl
 	 st.template update< not_range >( n, true );
       }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug &, States && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression not_range< C, D > where C is greater than D" );
 
@@ -237,8 +237,8 @@ namespace pegtl
       static void i_insert( std::ostream &, Print & )
       { }
 
-      template< bool, typename Input, typename Debug, typename ... Class >
-      static bool i_match( Input &, Debug &, Class && ... )
+      template< bool, typename Input, typename Debug, typename ... States >
+      static bool i_match( Input &, Debug &, States && ... )
       {
 	 return true;
       }
@@ -266,17 +266,17 @@ namespace pegtl
 	 st.template update< string >( n, true );
       }
 
-      template< bool Must, typename Input, typename Debug, typename ... Class >
-      static bool s_match( Input & in, Debug & de, Class && ... cl )
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool s_match( Input & in, Debug & de, States && ... st )
       {
-	 marker< Input > h( in );
-	 return h( i_match< Must >( in, de, std::forward< Class >( cl ) ... ) );
+	 typename Input::template marker< Must > h( in );
+	 return h( i_match< Must >( in, de, std::forward< States >( st ) ... ) );
       }
 
-      template< bool Must, typename Input, typename Debug, typename ... Class >
-      static bool i_match( Input & in, Debug & de, Class && ... cl )
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool i_match( Input & in, Debug & de, States && ... st )
       {
-	 return one< Char >::template s_match< Must >( in, de, std::forward< Class >( cl ) ... ) && pegtl::string< Chars ... >::template i_match< Must >( in, de, std::forward< Class >( cl ) ... );
+	 return one< Char >::template s_match< Must >( in, de, std::forward< States >( st ) ... ) && pegtl::string< Chars ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... );
       }
    };
 
@@ -379,12 +379,6 @@ namespace pegtl
       }
    };
 
-   struct space_star
-	 : star< blank > {};
-
-   struct space_plus
-	 : plus< blank > {};
-
    struct space
 	 : list< ' ', '\n', '\r', '\t', '\v', '\f' >
    {
@@ -395,19 +389,25 @@ namespace pegtl
       }
    };
 
-   struct white_star
+   struct space_star
 	 : star< space > {};
 
-   struct white_plus
+   struct space_plus
 	 : plus< space > {};
+
+   struct blank_star
+	 : star< blank > {};
+
+   struct blank_plus
+	 : plus< blank > {};
 
    struct until_eol
 	 : until1< eol > {};
 
-   struct white_until_eof
+   struct space_until_eof
 	 : until< space, eof > {};
 
-   struct space_until_eol
+   struct blank_until_eol
 	 : until< blank, eol > {};
 
    struct shebang

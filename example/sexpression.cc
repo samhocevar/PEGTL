@@ -94,7 +94,7 @@ namespace sexpression
       template< bool Must, typename Input, typename Debug >
       static bool s_match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
       {
-	 marker< Input > p( in );
+	 typename Input::template marker< Must > p( in );
 
 	 std::shared_ptr< node_base > car;
 	 std::shared_ptr< node_base > cdr;
@@ -127,10 +127,10 @@ namespace sexpression
 	 : ifmust< one< ';' >, until_eol > {};
 
    struct separator
-	 : sor< comment, white_plus > {};
+	 : sor< comment, space_plus > {};
 
    struct read_atom
-	 : pad< action< plus< digit >, token_action >, separator > {};
+	 : pad< action_all< plus< digit >, token_action >, separator > {};
 
    struct read_expr;
    struct read_tail;

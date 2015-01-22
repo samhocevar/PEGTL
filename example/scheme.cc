@@ -1,6 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
+#include <fstream>
 #include <pegtl/pegtl.hh>
 
 // Nearly complete scheme R6RS syntax check.
@@ -268,12 +269,12 @@ namespace scheme
    struct datum;
 
    struct list
-	 : pegtl::sor< pegtl::seq< padded_lexeme< pegtl::one< '(' > >, pegtl::seq< pegtl::sor< pegtl::star< datum >, pegtl::seq< pegtl::plus< datum >, pegtl::seq< pegtl::one< '.' >, pegtl::at< delimiter > >, datum > >, padded_lexeme< pegtl::one< ')' > > > >,
-		       pegtl::seq< padded_lexeme< pegtl::one< '[' > >, pegtl::seq< pegtl::sor< pegtl::star< datum >, pegtl::seq< pegtl::plus< datum >, pegtl::seq< pegtl::one< '.' >, pegtl::at< delimiter > >, datum > >, padded_lexeme< pegtl::one< ']' > > > >,
+	 : pegtl::sor< pegtl::seq< padded_lexeme< pegtl::one< '(' > >, pegtl::seq< pegtl::sor< pegtl::seq< pegtl::plus< datum >, pegtl::ifmust< pegtl::one< '.' >, pegtl::at< delimiter > >, datum >, pegtl::star< datum > >, padded_lexeme< pegtl::one< ')' > > > >,
+		       pegtl::seq< padded_lexeme< pegtl::one< '[' > >, pegtl::seq< pegtl::sor< pegtl::seq< pegtl::plus< datum >, pegtl::ifmust< pegtl::one< '.' >, pegtl::at< delimiter > >, datum >, pegtl::star< datum > >, padded_lexeme< pegtl::one< ']' > > > >,
 		       abbreviation > {};
 
    struct compound_datum
-	 : pegtl::sor< list, vector, bytevector > {};
+	 : pegtl::sor< bytevector, vector, list > {};
 
    struct symbol
 	 : identifier {};
@@ -283,6 +284,9 @@ namespace scheme
 
    struct datum
 	 : pegtl::sor< lexeme_datum, compound_datum > {};
+   
+   struct r6rs
+	 : pegtl::until< datum, pegtl::space_until_eof > {};
 
 } // scheme
 
@@ -292,7 +296,7 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      if ( pegtl::basic_parse_string_nothrow< scheme::datum >( pegtl::read_string( argv[ arg ] ) ) ) {
+      if ( pegtl::smart_parse_string_nothrow< scheme::r6rs >( true, pegtl::read_string( argv[ arg ] ) ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
       }
       else {

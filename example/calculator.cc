@@ -69,7 +69,7 @@ namespace calculator
 	 : seq< opt< list< '+', '-' > >, plus< digit > > {};
 
    struct push_number
-	 : pad< action< read_number, push_action >, space > {};
+	 : pad< action_nth< 1, read_number, push_action >, space > {};
 
    template< int C >
    struct calc_pad
@@ -87,33 +87,34 @@ namespace calculator
 	 : sor< push_number, seq< read_open, read_expr, read_close > > {};
 
    struct read_mul
-	 : action< ifmust< calc_pad< '*' >, read_atom >, op_action< std::multiplies< value_type > > > {};
+	 : action_nth< 1, ifmust< calc_pad< '*' >, read_atom >, op_action< std::multiplies< value_type > > > {};
 
    struct read_div
-	 : action< ifmust< calc_pad< '/' >, read_atom >, op_action< std::divides< value_type > > > {};
+	 : action_nth< 1, ifmust< calc_pad< '/' >, read_atom >, op_action< std::divides< value_type > > > {};
 
    struct read_prod
 	 : seq< read_atom, star< sor< read_mul, read_div > > > {};
 
    struct read_add
-	 : action< ifmust< calc_pad< '+' >, read_prod >, op_action< std::plus< value_type > > > {};
+	 : action_nth< 1, ifmust< calc_pad< '+' >, read_prod >, op_action< std::plus< value_type > > > {};
 
    struct read_sub
-	 : action< ifmust< calc_pad< '-' >, read_prod >, op_action< std::minus< value_type > > > {};
+	 : action_nth< 1, ifmust< calc_pad< '-' >, read_prod >, op_action< std::minus< value_type > > > {};
 
    struct read_expr
 	 : seq< read_prod, star< sor< read_add, read_sub > > > {};
 
    struct read_calc
-	 : seq< read_expr, white_star, eof > {};
+	 : seq< read_expr, space_until_eof > {};
 
 } // calculator
 
 int main( int argc, char ** argv )
 {
    for ( int arg = 1; arg < argc; ++arg ) {
+      std::string foo;
       calculator::stack stack;
-      if ( pegtl::basic_parse_string_nothrow< calculator::read_calc >( argv[ arg ], stack ) ) {
+      if ( pegtl::basic_parse_string_nothrow< calculator::read_calc >( argv[ arg ], foo, stack ) ) {
 	 assert( stack.size() == 1 );
 	 std::cerr << "input " << argv[ arg ] << " result " << stack.front() << "\n";
       }

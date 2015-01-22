@@ -72,7 +72,7 @@ namespace pegtl
    struct at< not_at< Rule > >
 	 : not_at< Rule > {};
 
-#if defined( PEGTL_INTRUSIVE_OPTIMISATIONS )
+#if defined( PEGTL_IMPURE_OPTIMISATIONS )
 
    template< typename Rule >
    struct opt< at< Rule > >

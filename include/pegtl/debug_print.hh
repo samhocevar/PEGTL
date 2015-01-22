@@ -85,9 +85,9 @@ namespace pegtl
       }
 
       template< typename Rule >
-      void update( const std::string & expr, const bool both = false )
+      void update( const std::string & in_expr, const bool both = false )
       {
-         update( key< Rule >(), expr, both );
+         update( key< Rule >(), in_expr, both );
       }
 
       void print_rules()
@@ -124,11 +124,11 @@ namespace pegtl
          return find( key< Rule >() );
       }
 
-      const value_type & find( const char* key )
+      const value_type & find( const char* in_key )
       {
          ensure_insert();
 
-         const map_type::const_iterator i = m_rules.find( key );
+         const map_type::const_iterator i = m_rules.find( in_key );
 	 if( i == m_rules.end() ) {
             return m_default_value;
 	 }
@@ -145,13 +145,13 @@ namespace pegtl
 	 }
       }
 
-      void update( const char* key, const std::string & expr, const bool both )
+      void update( const char* key, const std::string & in_expr, const bool both )
       {
 	 if ( both ) {
-            m_rules[ key ] = value_type( expr, expr );
+            m_rules[ key ] = value_type( in_expr, in_expr );
 	 }
 	 else {
-	    m_rules[ key ].m_expr = expr;
+	    m_rules[ key ].m_expr = in_expr;
 	 }
       }
    };

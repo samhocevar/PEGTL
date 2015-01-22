@@ -34,7 +34,7 @@ Still in the middle of a series of enhancements and additions on the road to 1.0
     # plus optionally full trace of all invoked rules.
   * Some generic actions, like sub-expression capturing.
   * Some trivial automatic optimisations, to be extended.
-  * Diagnostics with (nearly-)pretty-printing of grammar rules.
+  * Diagnostics with readable printing of grammar rules.
   * Examples that show how to use the features of the library.
 
 ===Requirements===
@@ -493,26 +493,27 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 || `e`        || `success`               || Success. ||
 || `!e`       || `failure`               || Local failure. ||
 ||            || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
-|| `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails; variadic. ||
-|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic. ||
-|| `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< seq< R, ... >, success >`; variadic in `R`. ||
-|| `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R, ... > >`; variadic in `R`. ||
-|| `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R, ... > >`; variadic in `R`. ||
-|| `$C`       || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
-|| `C % R`    || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming); variadic in `R`. ||
-||            || `must< R, ... >`        || Equivalent to `seq< R, ... >`, but converts local failure of `seq< R, ... >` to global failure; variadic in `R`. ||
-|| `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< R, ... > >`; variadic in `R`. ||
-|| `C --> R`  || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once; variadic in `R`. ||
-||            || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, seq< not_at< C >, must< T > > >`, but invokes `C` only once. ||
-||            || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
-||            || `list< R, S >`          || Equivalent to `seq< R, star< ifmust< S, R > >`, i.e. to parse non-empty lists of `R`s separated by `S`s. ||
-|| `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< seq< R, ... >, ..., seq< R, ... > >` with `n` repetitions of `seq< R, ... >`; variadic in `R`. ||
 || `&C`       || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
 || `!C`       || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
-|| `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< rep< n, R, ... >, rep< m-n, opt< R, ... > >, not_at< seq< R, ... > > >`; variadic in `R`. ||
+|| `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails. ||
+|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds. ||
+|| `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< seq< R, ... >, success >`. ||
+|| `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R, ... > >`. ||
+|| `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R, ... > >`. ||
+|| `$C`       || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
+|| `C % R`    || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming). ||
+||            || `must< R, ... >`        || Equivalent to `seq< R, ... >`, but converts local failure of `seq< R, ... >` to global failure. ||
+|| `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< R, ... > >`. ||
+|| `C --> R`  || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once. ||
+||            || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, must< T > >`. ||
+||            || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
+||            || `list< R, S, A = nop >` || Equivalent to `seq< R, star< ifmust< S, action< R, A > > > >`, i.e. to parse non-empty lists of `R` separated by `S`. ||
+|| `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< seq< R, ... >, ..., seq< R, ... > >` with `n` repetitions of `seq< R, ... >`. ||
+|| `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< rep< n, R, ... >, rep< m-n, opt< R, ... > >, not_at< seq< R, ... > > >`. ||
 ||            || `padl< T, L >`          || Equivalent to `seq< star< L >, T >`. ||
 ||            || `padr< T, R >`          || Equivalent to `seq< T, star< R > >`. ||
 ||            || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`. ||
+||            || `enclose< B, C, E = B, A = nop >` || Equivalent to `ifmust< B, action< until< at< E >, C >, A >, E >`. ||
 
 Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the letter epsilon.
 
@@ -564,12 +565,14 @@ With a `using namespace pegtl::ascii`, the definition of `string` _rules_ can be
 ===Action Rules===
 
 || *Action Rule*                || *Description* ||
+|| `apply< F, ... >`            || Unconditionally apply all actions `F` to the empty string and all _state_ objects. ||
 || `action< R, F, ... >`        || On success of `R`, apply all actions `F` to matched sub-string and all _state_ objects. ||
 || `action_nth< N, R, F, ... >` || On success of `R`, apply all actions `F` to matched sub-string and N+1-st _state_ object. ||
 
 ===Actual Actions===
 
 || *Action* || *Description* ||
+|| `nop`                     || Actian that does nothing. ||
 || `apply_nth< N, F, ... >`  || Apply all actions `F` to matched sub-string and N+1-st _state_ object. ||
 || `apply_insert`            || Calls `c.insert( c.end(), s )`, given matched sub-string `s` and a single _state_ argument `c`. ||
 || `apply_push_back`         || Calls `c.push_back( s )`, given matched sub-string `s` and a single _state_ argument `c`. ||
@@ -656,6 +659,13 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 
 =Changelog=
+
+*PEGTL version 0.25*
+
+  * Fixed and cleaned up the rule pretty printer significantly (readability).
+  * Added new convenience rule `enclose`, useful for quoted strings (convenience).
+  * Added new rule to unconditionally apply an action with empty matched string (convenience).
+  * Added action argument to `list` rule and added a nop action for use as default action (convenience).
 
 *PEGTL version 0.24*
 

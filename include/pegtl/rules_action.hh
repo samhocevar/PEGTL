@@ -31,6 +31,23 @@ namespace pegtl
 	 apply_impl< Funcs ... >::apply( s, std::forward< States >( st ) ... );
       }
    };
+
+   template< typename ... Funcs >
+   struct apply
+   {
+      typedef apply key_type;
+
+      template< typename Print >
+      static void prepare( Print & )
+      { }
+
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool match( Input &, Debug &, States && ... st )
+      {
+	 apply_impl< Funcs ... >::apply( "", std::forward< States >( st ) ... );
+	 return true;
+      }
+   };
    
    template< typename Rule, typename ... Funcs >
    struct action
@@ -83,6 +100,13 @@ namespace pegtl
    	 : action< Rule, apply_nth< N, Funcs ... > > {};
 
    // Some simple action classes.
+
+   struct nop
+   {
+      template< typename ... States >
+      static void apply( const std::string &, States && ... )
+      { }
+   };
 
    template< unsigned X >
    struct apply_notify

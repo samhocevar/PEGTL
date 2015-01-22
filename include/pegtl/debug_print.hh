@@ -69,7 +69,6 @@ namespace pegtl
       static value_type value()
       {
 	 const std::string d = demangle< Rule >();
-	 //	 const std::string d = nomespace( demangle< Rule >() );
 	 return value_type( d, d );
       }
 
@@ -217,17 +216,27 @@ namespace pegtl
       template< typename Print >
       names( Print & st, const std::string & a, const std::string & b, const std::string & c )
 	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, "", b, "" )() + c )
-      { }
+     { }
    };
 
-   template< typename Master, typename Rule, typename ... Rules, typename Print >
+   template< typename Master, typename Rule, typename Print >
+   void prepare1( Print & st, const std::string & a, const std::string &, const std::string &, const std::string &, const std::string & e )
+   {
+      st.template insert< Rule >();
+      const std::string y = demangle< Master >();
+      const std::string m = st.template name< Master >();
+      const std::string n = st.template name< Rule >();
+      st.template update< Master >( a + n + e, m == y );
+   }
+
+   template< typename Master, typename Rule1, typename Rule2, typename ... Rules, typename Print >
    void prepare1( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d, const std::string & e )
    {
-      st.template insert< Rule, Rules ... >();
+     st.template insert< Rule1, Rule2, Rules ... >();
       const std::string y = demangle< Master >();
-      const std::string::size_type z = y.find( ',' );
-      const std::string n = names< Rule, Rules ... >( st, b, c, d );
-      st.template update< Master >( a + n + e, ! st.template name< Master >().compare( 0, z, y ) );
+      const std::string m = st.template name< Master >();
+      const std::string n = names< Rule1, Rule2, Rules ... >( st, b, c, d );
+      st.template update< Master >( a + n + e, m == y );
    }
 
    template< typename Master, typename Head, typename Rule, typename ... Rules, typename Print >
@@ -235,10 +244,10 @@ namespace pegtl
    {
       st.template insert< Head, Rule, Rules ... >();
       const std::string y = demangle< Master >();
-      const std::string::size_type z = y.find( ',' );
-      const std::string m = st.template name< Head >();
+      const std::string m = st.template name< Master >();
+      const std::string h = st.template name< Head >();
       const std::string n = names< Rule, Rules ... >( st, "", c, "" );
-      st.template update< Master >( a + m + b + n + d, ! m.compare( 0, z, y ) );
+      st.template update< Master >( a + h + b + n + d, m == y );
    }
 
    template< typename TopRule >

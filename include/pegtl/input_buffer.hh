@@ -202,7 +202,7 @@ namespace pegtl
 
       Location location() const
       {
-	 return Location( m_offset, m_offset );
+	 return Location( m_offset );
       }
 
       typedef typename std::iterator_traits< Iterator >::value_type value_type;

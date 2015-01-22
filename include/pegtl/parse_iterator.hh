@@ -22,42 +22,42 @@ namespace pegtl
    // however only parsers that otherwise only perform a single pass on the
    // input can be used.
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = dummy_location, typename ... States >
    bool dummy_parse_input_throws( const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
       return dummy_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = dummy_location, typename ... States >
    bool dummy_parse_input_nothrow( const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
       return dummy_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = offset_location, typename ... States >
    bool basic_parse_input_throws( const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
       return basic_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = offset_location, typename ... States >
    bool basic_parse_input_nothrow( const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
       return basic_parse_nothrow< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = offset_location, typename ... States >
    bool trace_parse_input_throws( const bool trace, const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
       return trace_parse_throws< TopRule >( trace, in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename InputIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename InputIter, typename Location = offset_location, typename ... States >
    bool trace_parse_input_nothrow( const bool trace, const InputIter & begin, const InputIter & end, States && ... st )
    {
       buffer_input< InputIter, Location > in( begin, end );
@@ -69,14 +69,14 @@ namespace pegtl
    // for input iterators and should be used whenever possible; there are no
    // specialisations for random-access iterators.
 
-   template< typename TopRule, typename ForwardIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename ForwardIter, typename Location = dummy_location, typename ... States >
    bool dummy_parse_forward_throws( const ForwardIter & begin, const ForwardIter & end, States && ... st )
    {
       forward_input< ForwardIter, Location > in( begin, end );
       return dummy_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename ForwardIter, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename ForwardIter, typename Location = dummy_location, typename ... States >
    bool dummy_parse_forward_nothrow( const ForwardIter & begin, const ForwardIter & end, States && ... st )
    {
       forward_input< ForwardIter, Location > in( begin, end );
@@ -116,15 +116,13 @@ namespace pegtl
    template< typename TopRule, typename ForwardIter, typename Location = ascii_location, typename ... States >
    bool smart_parse_forward_throws( const bool trace, const ForwardIter & begin, const ForwardIter & end, States && ... st )
    {
-      forward_input< ForwardIter, Location > in( begin, end );
-      return smart_parse_throws< TopRule >( trace, in, std::forward< States >( st ) ... );
+      return dummy_parse_forward_nothrow( begin, end, std::forward< States >( st ) ... ) || trace_parse_forward_throws( trace, begin, end, std::forward< States >( st ) ... );
    }
 
    template< typename TopRule, typename ForwardIter, typename Location = ascii_location, typename ... States >
    bool smart_parse_forward_nothrow( const bool trace, const ForwardIter & begin, const ForwardIter & end, States && ... st )
    {
-      forward_input< ForwardIter, Location > in( begin, end );
-      return smart_parse_nothrow< TopRule >( trace, in, std::forward< States >( st ) ... );
+      return dummy_parse_forward_nothrow( begin, end, std::forward< States >( st ) ... ) || trace_parse_forward_nothrow( trace, begin, end, std::forward< States >( st ) ... );
    }
 
 } // pegtl

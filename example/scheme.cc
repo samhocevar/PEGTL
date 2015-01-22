@@ -2,24 +2,24 @@
 // Please see license.txt for license.
 
 #include <fstream>
-#include <pegtl/pegtl.hh>
-
-// Nearly complete scheme R6RS syntax check.
-// - Only ASCII input is handled correctly.
-// - The rule <u8> does not check the exact range.
-// - This is as faithful to the original as possible,
-//   not even obvious redundancies have been changed;
-//   some redundancies could be easily factored out.
-// - In some places however the order must be changed
-//   because for CFGs backtrack when a nondeterministic
-//   choice fails, however PEGs are always deterministic
-//   because the order of rules implies a priority, and
-//   a choice that was once made is never changed later.
-// - Some additions were necessary in order to replace
-//   a sepearate tokenisation phase.
+#include <pegtl.hh>
 
 namespace scheme
 {
+   // Nearly complete Scheme R6RS syntax check.
+   // - Only ASCII input is handled correctly.
+   // - The rule <u8> does not check the exact range.
+   // - This is as faithful to the original as possible,
+   //   not even obvious redundancies have been changed;
+   //   some redundancies could be easily factored out.
+   // - In some places however the order must be changed
+   //   because for CFGs backtrack when a nondeterministic
+   //   choice fails, however PEGs are always deterministic
+   //   because the order of rules implies a priority, and
+   //   a choice that was once made is never changed later.
+   // - Some additions were necessary in order to replace
+   //   a sepearate tokenisation phase.
+
    using namespace pegtl::ascii;
 
    struct interlexeme_space;
@@ -296,16 +296,6 @@ int main( int argc, char ** argv )
       pegtl::print_rules< scheme::datum >();
    }
    for ( int arg = 1; arg < argc; ++arg ) {
-      // 2.8 seconds with -O1
-      //      std::ifstream ifs( argv[ arg ], std::ios_base::in | std::ios_base::binary );
-      //      std::noskipws( ifs );  // Work around broken (?) library design that skips ws even on files opened as binary.
-      //      if ( pegtl::basic_parse_input_nothrow< scheme::r6rs >( std::istream_iterator< char >( ifs ), std::istream_iterator< char >() ) ) {
-
-      // 2.0 seconds with -O1
-      //      if ( pegtl::basic_parse_file_nothrow< scheme::r6rs >( argv[ arg ] ) ) {
-
-      // 0.4 seconds with -O1
-      // 0.35 seconds with -O3
       if ( pegtl::smart_parse_file_nothrow< scheme::r6rs >( false, argv[ arg ] ) ) {
 	 PEGTL_PRINT( "input from file " << argv[ arg ] << " accepted" );
       }

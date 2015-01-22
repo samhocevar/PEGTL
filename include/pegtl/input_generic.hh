@@ -59,6 +59,49 @@ namespace pegtl
 
    // Please see the supplied rule classes for usage examples...
 
+   class dummy_location
+   {
+   public:
+      int operator() ( const int c )
+      {
+	 return c;
+      }
+
+      void write_to( std::ostream & ) const
+      {
+	 ;
+      }
+   };
+
+   class offset_location
+   {
+   public:
+      explicit
+      offset_location( const size_t offset = 0 )
+	    : m_offset( offset )
+      { }
+
+      int operator() ( const int c )
+      {
+	 ++m_offset;
+	 return c;
+      }
+
+      void write_to( std::ostream & o ) const
+      {
+	 o << "offset=" << m_offset;
+      }
+
+   private:
+      size_t m_offset;
+   };
+
+   inline std::ostream & operator<< ( std::ostream & o, const offset_location & w )
+   {
+      w.write_to( o );
+      return o;
+   }
+
 } // pegtl
 
 #endif

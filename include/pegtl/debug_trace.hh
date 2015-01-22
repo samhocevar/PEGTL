@@ -79,11 +79,11 @@ namespace pegtl
       {
 	 if ( m_trace ) {
 	    trace_guard< Rule, Input, trace_debug > d( in, m_counter, m_printer );
-	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
+	    return d( Rule::template match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
 	 else {
 	    basic_guard< Rule, Input, trace_debug > d( in.location(), m_counter, m_printer );
-	    return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
+	    return d( Rule::template match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
 	 }
       }
 

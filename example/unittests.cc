@@ -1,7 +1,7 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl/pegtl.hh>
+#include <pegtl.hh>
 
 namespace
 {
@@ -135,7 +135,7 @@ namespace
       s< star< abc > >( t );
       s< plus< abc > >( t );
       s< seq< plus< abc >, star< abc >, eol > >( t );
-      s< seq< plus< abc >, plus< abc >, star< abc >, eol > >( t );
+      s< seq< abc, plus< abc >, star< abc >, eol > >( t );
       s< seq< plus< abc >, eol > >( t );
       s< seq< plus< abc >, eof > >( t );
       s< seq< star< abc >, eol > >( t );
@@ -162,11 +162,11 @@ namespace
       f< until< one< 'a' >, one< 'c' > > >( t );
 
       s< ifthen< one< 'a' >, one< 'b' > > >( t );
-      s< ifthen< one< 'a' >, one< 'c' > > >( t );
+      f< ifthen< one< 'a' >, one< 'c' > > >( t );
       s< ifthen< one< 'b' >, one< 'z' > > >( t );
 
       s< seq< ifthen< one< 'a' >, one< 'b' > >, one< 'c' > > >( t );
-      s< seq< ifthen< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
+      s< sor< ifthen< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
       s< seq< ifthen< one< 'b' >, one< 'z' > >, one< 'a' > > >( t );
 
       s< ifmust< one< 'a' >, one< 'b' > > >( t );
@@ -174,7 +174,7 @@ namespace
       f< ifmust< one< 'b' >, one< 'z' > > >( t );
 
       s< seq< ifmust< one< 'a' >, one< 'b' > >, one< 'c' > > >( t );
-      s< sor< ifmust< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
+      f< sor< ifmust< one< 'a' >, one< 'c' > >, one< 'a' > > >( t );
       s< sor< ifmust< one< 'b' >, one< 'z' > >, one< 'a' > > >( t );
 
       s< ifthenelse< one< 'a' >, one< 'b' >, one< 'z' > > >( t );
@@ -202,6 +202,8 @@ int main()
    atomic_tests< '\n' >();
    atomic_tests< '\'' >();
    atomic_tests< '\0' >();
+
+   combinator_tests();
 
    if ( failed ) {
       std::cout << "ERROR, tests passed=" << passed << " tests failed=" << failed << "!" << std::endl;

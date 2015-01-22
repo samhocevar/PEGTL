@@ -21,7 +21,7 @@ namespace pegtl
    // defined in utilities.hh can be used to read a file into a std::string
    // (which can then be parsed by one of the parse_string functions).
 
-   template< typename TopRule, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename Location = dummy_location, typename ... States >
    bool dummy_parse_file_throws( const std::string & filename, States && ... st )
    {
       file_mapper fm( filename );
@@ -29,7 +29,7 @@ namespace pegtl
       return dummy_parse_throws< TopRule >( in, std::forward< States >( st ) ... );
    }
 
-   template< typename TopRule, typename Location = ascii_location, typename ... States >
+   template< typename TopRule, typename Location = dummy_location, typename ... States >
    bool dummy_parse_file_nothrow( const std::string & filename, States && ... st )
    {
       file_mapper fm( filename );

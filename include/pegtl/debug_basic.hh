@@ -82,7 +82,7 @@ namespace pegtl
       bool match( Input & in, States && ... st )
       {
 	 basic_guard< Rule, Input, basic_debug > d( in.location(), m_counter, m_printer );
-	 return d( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
+	 return d( Rule::template match< Must >( in, *this, std::forward< States >( st ) ... ), Must );
       }
 	 
    protected:

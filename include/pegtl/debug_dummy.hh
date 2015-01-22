@@ -29,7 +29,7 @@ namespace pegtl
       template< bool Must, typename Rule, typename Input, typename ... States >
       bool match( Input & in, States && ... st )
       {
-	 if ( Rule::template s_match< Must >( in, *this, std::forward< States >( st ) ... ) ) {
+	 if ( Rule::template match< Must >( in, * this, std::forward< States >( st ) ... ) ) {
 	    return true;
 	 }
 	 else if ( Must ) {

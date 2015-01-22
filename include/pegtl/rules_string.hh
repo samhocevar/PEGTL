@@ -15,13 +15,13 @@ namespace pegtl
       typedef any key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< any >( ".", true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -37,14 +37,14 @@ namespace pegtl
       typedef one key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 const std::string n = "\"" + escape( C ) + "\"";
 	 st.template update< one >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -64,14 +64,14 @@ namespace pegtl
       typedef not_one key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 const std::string n = std::string( "\"[^" ) + escape( C ) + "]\"";
 	 st.template update< not_one >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {
 	 if ( in.eof() ) {
 	    return false;
@@ -107,7 +107,7 @@ namespace pegtl
       typedef list key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 std::ostringstream o;
 	 d_i( o );
@@ -116,7 +116,7 @@ namespace pegtl
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {      
 	 if ( in.eof() ) {
 	    return false;
@@ -143,7 +143,7 @@ namespace pegtl
       typedef not_list key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 std::ostringstream o;
 	 list< Chars ... >::d_i( o );
@@ -152,7 +152,7 @@ namespace pegtl
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {      
 	 if ( in.eof() ) {
 	    return false;
@@ -176,14 +176,14 @@ namespace pegtl
       typedef range key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 const std::string n = std::string( "\"[" ) + escape( C ) + "-" + escape( D ) + "]\"";
 	 st.template update< range >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression range< C, D > where C is greater than D" );
 	 if ( in.eof() ) {
@@ -200,14 +200,14 @@ namespace pegtl
       typedef not_range key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 const std::string n = std::string( "\"[^" ) + escape( C ) + "-" + escape( D ) + "]\"";
 	 st.template update< not_range >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug &, States && ... )
+      static bool match( Input & in, Debug &, States && ... )
       {
 	 static_assert( C <= D, "pegtl: illegal expression not_range< C, D > where C is greater than D" );
 
@@ -258,7 +258,7 @@ namespace pegtl
       }
       
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 std::ostringstream o;
 	 i_insert( o, st );
@@ -267,7 +267,7 @@ namespace pegtl
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
-      static bool s_match( Input & in, Debug & de, States && ... st )
+      static bool match( Input & in, Debug & de, States && ... st )
       {
 	 typename Input::template marker< Must > h( in );
 	 return h( i_match< Must >( in, de, std::forward< States >( st ) ... ) );
@@ -276,7 +276,7 @@ namespace pegtl
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool i_match( Input & in, Debug & de, States && ... st )
       {
-	 return one< Char >::template s_match< Must >( in, de, std::forward< States >( st ) ... ) && pegtl::string< Chars ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... );
+	 return one< Char >::template match< Must >( in, de, std::forward< States >( st ) ... ) && pegtl::string< Chars ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... );
       }
    };
 
@@ -292,7 +292,7 @@ namespace pegtl
 	 : range< '0', '9' >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< digit >( "digit", true );
       }
@@ -302,7 +302,7 @@ namespace pegtl
 	 : range< 'a', 'z' >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< lower >( "lower", true );
       }      
@@ -312,7 +312,7 @@ namespace pegtl
 	 : range< 'A', 'Z' >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< upper >( "upper", true );
       }      
@@ -322,7 +322,7 @@ namespace pegtl
 	 : sor< lower, upper >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< alpha >( "alpha", true );
       }
@@ -332,7 +332,7 @@ namespace pegtl
 	 : sor< alpha, digit >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< alpha >( "alnum", true );
       }
@@ -342,7 +342,7 @@ namespace pegtl
 	 : sor< digit, range< 'a', 'f' >, range< 'A', 'F' > >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< alpha >( "xdigit", true );
       }
@@ -373,7 +373,7 @@ namespace pegtl
 	 : list< ' ', '\t' >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< blank >( "blank", true );
       }
@@ -383,7 +383,7 @@ namespace pegtl
 	 : list< ' ', '\n', '\r', '\t', '\v', '\f' >
    {
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template update< space >( "space", true );
       }

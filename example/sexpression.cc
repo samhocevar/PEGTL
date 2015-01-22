@@ -1,12 +1,12 @@
 // Copyright (c) 2008 by Dr. Colin Hirsch 
 // Please see license.txt for license.
 
-#include <pegtl/pegtl.hh>
-
-// First experiment on how to generate tree structures while parsing.
+#include <pegtl.hh>
 
 namespace sexpression
 {
+   // First experiment on how to generate tree structures from actions and rules.
+
    using namespace pegtl;
 
    // Base class for our tree-like data structure ...
@@ -86,13 +86,13 @@ namespace sexpression
       typedef seq< Head, Tail > key_type;
 
       template< typename Print >
-      static void s_insert( Print & st )
+      static void prepare( Print & st )
       {
 	 st.template insert< Head, Tail >();
       }
 
       template< bool Must, typename Input, typename Debug >
-      static bool s_match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
+      static bool match( Input & in, Debug & de, std::shared_ptr< node_base > & result )
       {
 	 typename Input::template marker< Must > p( in );
 
@@ -117,7 +117,7 @@ namespace sexpression
 
    struct token_action
    {
-      static void matched( const std::string & token, std::shared_ptr< node_base > & result )
+      static void apply( const std::string & token, std::shared_ptr< node_base > & result )
       {
 	 result = std::make_shared< token_node >( token, "no debug information here yet" );
       }
@@ -130,7 +130,7 @@ namespace sexpression
 	 : sor< comment, space_plus > {};
 
    struct read_atom
-	 : pad< action_all< plus< digit >, token_action >, separator > {};
+	 : pad< action< plus< digit >, token_action >, separator > {};
 
    struct read_expr;
    struct read_tail;

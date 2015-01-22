@@ -37,7 +37,7 @@ namespace pegtl
 
       template< typename TopRule >
       printer( const tag< TopRule > & )
-	    : m_top_inserter( & TopRule::template s_insert< printer > ),
+	    : m_top_inserter( & TopRule::template prepare< printer > ),
 	      m_top_rule_key( key< TopRule >() ),
 	      m_top_rule_value( value< TopRule >() )
       { }
@@ -155,7 +155,7 @@ namespace pegtl
       void insert_impl( const bool force = false )
       {
 	 if ( m_rules.insert( std::make_pair( key< Rule >(), value< Rule >() ) ).second || force ) {
-	    Rule::s_insert( *this );
+	    Rule::prepare( *this );
 	 }
       }
 
@@ -179,12 +179,12 @@ namespace pegtl
 	    : m_result( result )
       { }
 
-      operator const std::string & () const
+      std::string operator() () const
       {
 	 return m_result;
       }
 
-      const std::string & operator() () const
+      operator std::string () const
       {
 	 return m_result;
       }

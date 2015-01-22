@@ -13,7 +13,7 @@ namespace grammar
    struct read_expr;
 
    struct read_comment
-	 : seq< one< '#' >, until_eol > {};
+	 : seq< one< '#' >, until< eol > > {};
 
    struct read_terminal_char
 	 : ifmust< one< '\'' >, seq< not_one< '\'' >, one< '\'' > > > {};
@@ -22,13 +22,13 @@ namespace grammar
 	 : ifmust< one< '"' >, seq< star< not_one< '"' > >, one< '"' > > > {};
 
    struct read_infix
-	 : pad< list< '/', '.' >, blank > {};
+	 : pad< one< '/', '.' >, blank > {};
 
    struct read_prefix
-	 : pad< list< '!', '&' >, blank > {};
+	 : pad< one< '!', '&' >, blank > {};
 
    struct read_postfix
-	 : pad< list< '+', '*', '?' >, blank > {};
+	 : pad< one< '+', '*', '?' >, blank > {};
 
    struct read_paren
 	 : ifmust< pad_one< '(', blank >, seq< read_expr, pad_one< ')', blank > > > {};
@@ -49,7 +49,7 @@ namespace grammar
 	 : sor< read_comment, read_rule > {};
 
    struct read_file
-	 : until< read_line, space_until_eof > {};
+	 : until< space_until_eof, read_line > {};
 
 } // grammar
 

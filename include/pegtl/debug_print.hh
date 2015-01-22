@@ -216,15 +216,36 @@ namespace pegtl
    {
       template< typename Print >
       names( Print & st, const std::string & a, const std::string & b, const std::string & c )
-	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, std::string(), b, c )() )
+	    : names_impl( a + name< Rule1 >( st ) + b + names< Rule2, Rules ... >( st, "", "", "" )() + c )
       { }
    };
+
+   template< typename Master, typename Rule, typename ... Rules, typename Print >
+   void prepare1( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d, const std::string & e )
+   {
+      st.template insert< Rule, Rules ... >();
+      const std::string y = demangle< Master >();
+      const std::string::size_type z = y.find( ',' );
+      const std::string n = names< Rule, Rules ... >( st, b, c, d );
+      st.template update< Master >( a + n + e, ! st.template name< Master >().compare( 0, z, y ) );
+   }
+
+   template< typename Master, typename Head, typename Rule, typename ... Rules, typename Print >
+   void prepare2( Print & st, const std::string & a, const std::string & b, const std::string & c, const std::string & d )
+   {
+      st.template insert< Head, Rule, Rules ... >();
+      const std::string y = demangle< Master >();
+      const std::string::size_type z = y.find( ',' );
+      const std::string m = st.template name< Master >();
+      const std::string n = names< Rule, Rules ... >( st, "", c, "" );
+      st.template update< Master >( a + m + b + n + d, ! m.compare( 0, z, y ) );
+   }
 
    template< typename TopRule >
    void print_rules()
    {
       printer( tag< TopRule >() ).print_rules();
-   };
+   }
 
 } // pegtl
 

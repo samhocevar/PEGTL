@@ -35,11 +35,11 @@ namespace scheme
 
    template<>
    struct digit< 2 >
-	 : pegtl::list< '0', '1' > {};
+	 : pegtl::one< '0', '1' > {};
 
    template<>
    struct digit< 8 >
-	 : pegtl::list< '0', '1', '2', '3', '4', '5', '6', '7' > {};
+	 : pegtl::one< '0', '1', '2', '3', '4', '5', '6', '7' > {};
 
    template<>
    struct digit< 10 >
@@ -80,13 +80,13 @@ namespace scheme
 		       pegtl::success > {};
 
    struct sign
-	 : pegtl::opt< pegtl::list< '+', '-' > > {};
+	 : pegtl::opt< pegtl::one< '+', '-' > > {};
 
    struct mantissa_width
 	 : pegtl::opt< pegtl::seq< pegtl::one< '|' >, pegtl::plus< digit< 10 > > > > {};
 
    struct exponent_marker
-	 : pegtl::list< e, E, s, S, f, F, d, D, l, L > {};
+	 : pegtl::one< e, E, s, S, f, F, d, D, l, L > {};
 
    struct suffix
 	 : pegtl::opt< pegtl::seq< exponent_marker, sign, pegtl::plus< digit< 10 > > > > {};
@@ -169,7 +169,7 @@ namespace scheme
 	 : character_tabulation {};
 
    struct special_initial
-	 : pegtl::list< '!', '$', '%', '&', '*', '/', ':', '<', '=', '>', '?', '^', '_', '~' > {};
+	 : pegtl::one< '!', '$', '%', '&', '*', '/', ':', '<', '=', '>', '?', '^', '_', '~' > {};
 
    struct letter
 	 : pegtl::alpha {};
@@ -181,13 +181,13 @@ namespace scheme
 	 : pegtl::space {};
 
    struct delimiter
-	 : pegtl::sor< pegtl::list< '(', ')', '[', ']', '"', ';', '#' >, whitespace, pegtl::eol > {};
+	 : pegtl::sor< pegtl::one< '(', ')', '[', ']', '"', ';', '#' >, whitespace, pegtl::eol > {};
 
    struct inline_hex_escape
 	 : pegtl::seq< pegtl::string< '\\', x >, pegtl::seq< hex_scalar_value, pegtl::one< ';' > > > {};
 
    struct string_element
-	 : pegtl::sor< pegtl::not_list< '"', '\\' >, pegtl::seq< pegtl::at_one< '\\' >, pegtl::sor< pegtl::seq< pegtl::one< '\\' >, pegtl::list< a, b, t, n, v, f, r, '"', '\\' > >, pegtl::seq< pegtl::one< '\\' >, intraline_whitespace, line_ending, intraline_whitespace >, inline_hex_escape > > > {};
+	 : pegtl::sor< pegtl::not_one< '"', '\\' >, pegtl::seq< pegtl::at_one< '\\' >, pegtl::sor< pegtl::seq< pegtl::one< '\\' >, pegtl::one< a, b, t, n, v, f, r, '"', '\\' > >, pegtl::seq< pegtl::one< '\\' >, intraline_whitespace, line_ending, intraline_whitespace >, inline_hex_escape > > > {};
 
    typedef pegtl::seq< pegtl::one< '"' >, pegtl::seq< pegtl::star< string_element >, pegtl::one< '"' > > > string_;
 
@@ -202,7 +202,7 @@ namespace scheme
    struct character
 	 : padded_lexeme< character_ > {};
 
-   typedef pegtl::seq< pegtl::seq< pegtl::one< '#' >, pegtl::list< t, 'T', f, 'F' > >, pegtl::at< delimiter > > boolean_;
+   typedef pegtl::seq< pegtl::seq< pegtl::one< '#' >, pegtl::one< t, 'T', f, 'F' > >, pegtl::at< delimiter > > boolean_;
 
    struct boolean
 	 : padded_lexeme< boolean_ > {};
@@ -213,7 +213,7 @@ namespace scheme
 	 : pegtl::seq< pegtl::sor< pegtl::one< '+' >, pegtl::one< '-' >, pegtl::string< '.', '.', '.' >, pegtl::seq< pegtl::string< '-', '>' >, pegtl::star< subsequent > > >, pegtl::at< delimiter > > {};
 
    struct special_subsequent
-	 : pegtl::list< '+', '-', '.', '@' > {};
+	 : pegtl::one< '+', '-', '.', '@' > {};
 
    struct initial
 	 : pegtl::sor< constituent, special_initial, inline_hex_escape > {};
@@ -241,7 +241,7 @@ namespace scheme
 	 : pegtl::seq< nested_comment, comment_text > {};
 
    struct comment_text
-	 : pegtl::until1< pegtl::sor< pegtl::string< '#', '|' >, pegtl::string< '|', '#' > > > {};
+	 : pegtl::until< pegtl::sor< pegtl::string< '#', '|' >, pegtl::string< '|', '#' > > > {};
 
    struct nested_comment
 	 : pegtl::seq< pegtl::string< '#', '|' >, pegtl::seq< comment_text, pegtl::star< comment_cont >, pegtl::string< '|', '#' > > > {};
@@ -249,7 +249,7 @@ namespace scheme
    struct datum;
 
    struct comment
-	 : pegtl::sor< pegtl::seq< pegtl::one< ';' >, pegtl::until_eol >, nested_comment, pegtl::seq< pegtl::string< '#', ';' >, interlexeme_space, datum >, pegtl::string< '#', '!', r, '6', r, s > > {};
+	 : pegtl::sor< pegtl::seq< pegtl::one< ';' >, pegtl::until< pegtl::eol > >, nested_comment, pegtl::seq< pegtl::string< '#', ';' >, interlexeme_space, datum >, pegtl::string< '#', '!', r, '6', r, s > > {};
 
    struct u8
 	 : number {};
@@ -286,7 +286,7 @@ namespace scheme
 	 : pegtl::sor< lexeme_datum, compound_datum > {};
    
    struct r6rs
-	 : pegtl::until< datum, pegtl::space_until_eof > {};
+	 : pegtl::until< pegtl::space_until_eof, datum > {};
 
 } // scheme
 

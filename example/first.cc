@@ -13,7 +13,7 @@ namespace example
    // some of the rules that are part of the PEGTL.
 
    struct grammar
-	 : seq< alpha, until< sor< alpha, digit >, eol > > {};
+	 : seq< alpha, until< eol, sor< alpha, digit > > > {};
 
    // The atomic rule 'alpha' matches any upper- or lower-case ASCII character.
    // The atomic rule 'digit' matches any ASCII digit.
@@ -21,7 +21,7 @@ namespace example
 
    // The rule combinator 'seq' stands for concatenation
    // The rule combinator 'sor' stands for ordered-choice, or sequenced-or.
-   // The rule combinator 'until' matches its first argument rule until the second argument rule matches.
+   // The rule combinator 'until' matches its second argument rule until the first argument rule matches.
 
    // Put together, this grammar is equivalent to the regular expression '^[[:alpha:]]([[:alpha:]]|[[:digit:]])*$'.
 

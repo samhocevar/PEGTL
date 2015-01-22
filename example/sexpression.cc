@@ -124,10 +124,10 @@ namespace sexpression
    };
 
    struct comment
-	 : ifmust< one< ';' >, until_eol > {};
+	 : ifmust< one< ';' >, until< eol > > {};
 
    struct separator
-	 : sor< comment, space_plus > {};
+	 : sor< comment, plus< space > > {};
 
    struct read_atom
 	 : pad< action< plus< digit >, token_action >, separator > {};
@@ -148,7 +148,7 @@ namespace sexpression
 	 : sor< read_list, read_atom > {};
 
    struct read_file
-	 : until< read_expr, until< separator, eof > > {};
+	 : until< until< eof, separator >, read_expr > {};
 
 } // sexpression
 

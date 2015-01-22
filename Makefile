@@ -1,16 +1,20 @@
 # Copyright (c) 2008 Dr. Colin Hirsch
+# Please see license.txt for license.
 
-CXX=g++-mp-4.3
+CXX ?= g++
 
-CPPFLAGS=-Iinclude -std=gnu++0x -D_REENTRANT
+CPPFLAGS := -Iinclude -std=c++0x -pedantic
 
-CXXFLAGS=-O1 -g -Wall -Wextra -Wimplicit -Wconversion -Wcast-align -Woverloaded-virtual -Wold-style-cast -Wformat=2 -Wswitch-enum -Wswitch-default -Wredundant-decls -fno-enforce-eh-specs -fno-strict-overflow -lpthread
+WARNINGS := -Wall -Wextra# -Wimplicit -Wconversion -Wcast-align -Woverloaded-virtual -Wold-style-cast -Wformat=2 -Wswitch-enum -Wswitch-default -Wredundant-decls
+OPTIMISE := -O1# -fno-enforce-eh-specs
+
+CXXFLAGS := $(WARNINGS) $(OPTIMISE)
 
 .PHONY: clean message
 
-SOURCES:=$(wildcard */*.cc)
-DEPENDS:=$(SOURCES:.cc=.d)
-PROGRAMS:=$(SOURCES:.cc=)
+SOURCES := $(wildcard */*.cc)
+DEPENDS := $(SOURCES:.cc=.d)
+PROGRAMS := $(SOURCES:.cc=)
 
 all: message $(PROGRAMS)
 	@echo "Executing PEGTL unit tests."

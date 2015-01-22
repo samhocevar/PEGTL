@@ -36,7 +36,45 @@ namespace pegtl
    struct failure
 	 : bool_rule< false > {};
 
-   template< typename Rule >
+   template< typename ... > struct seq;
+
+   template<>
+   struct seq<>
+	 : success
+   {
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool i_match( Input &, Debug &, States && ... )
+      {
+	 return true;
+      }
+   };
+
+   template< typename Rule, typename ... Rules >
+   struct seq< Rule, Rules ... >
+   {
+      typedef seq key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 prepare1< seq, Rule, Rules ... >( st, "", "( ", " ", " )", "" );
+      }
+
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool match( Input & in, Debug & de, States && ... st )
+      {
+	 typename Input::template marker< Must || ! sizeof ... ( Rules ) > h( in );
+	 return h( i_match< Must >( in, de, std::forward< States >( st ) ... ) );
+      }
+
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool i_match( Input & in, Debug & de, States && ... st )
+      {
+	 return de.template match< Must, Rule >( in, std::forward< States >( st ) ... ) && pegtl::seq< Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... );
+      }
+   };
+
+   template< typename ... Rules >
    struct opt
    {
       typedef opt key_type;
@@ -44,63 +82,42 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = st.template expr< Rule >() + "?";
-	 st.template update< opt >( n, true );
+	 prepare1< opt, Rules ... >( st, "", "( ", " ", " )", "?" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 return in.eof() || de.template match< false, Rule >( in, std::forward< States >( st ) ... ) || true;
+	 return in.eof() || seq< Rules ... >::template match< false >( in, de, std::forward< States >( st ) ... ) || true;
       }
    };
 
-   template< typename Rule, unsigned N, unsigned M = N >
+   template< unsigned N, typename ... Rules >
    struct rep
    {
       typedef rep key_type;
 
-      static std::string s_print()
-      {
-	 if ( M == N ) {
-	    return to_string( N );
-	 }
-	 else {
-	    return to_string( N ) + ',' + to_string( M );
-	 }	 
-      }
-
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = st.template expr< Rule >() + "{" + s_print() + "}";
-	 st.template update< rep >( n, ! st.template name< rep >().compare( 0, 11, "pegtl::rep<" ) );
+	 prepare1< rep, Rules ... >( st, "", "( ", " ", " )", "{" + to_string( N ) + "}" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 static_assert( N <= M, "pegtl: illegal expression rep< R, N, M > where N is greater than M" );
-
 	 typename Input::template marker< Must > p( in );
 
-	 for ( long long i = 0; i < N; ++i ) {
-	    if ( ! de.template match< Must, Rule >( in, std::forward< States >( st ) ... ) ) {
+	 for ( unsigned i = 0; i < N; ++i ) {
+	    if ( ! seq< Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... ) ) {
 	       return p( false );
-	    }
-	 }
-	 for ( long long i = N; i < M; ++i ) {
-	    if ( ! de.template match< Must, Rule >( in, std::forward< States >( st ) ... ) ) {
-	       return p( true );
 	    }
 	 }
 	 return p( true );
       }
    };
 
-   template< typename Rule >
+   template< typename ... Rules >
    struct star
    {
       typedef star key_type;
@@ -108,20 +125,18 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = st.template name< Rule >() + "*";
-	 st.template update< star >( n, true );
+	 prepare1< star, Rules ... >( st, "", "( ", " ", " )", "*" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 while ( ( ! in.eof() ) && de.template match< false, Rule >( in, std::forward< States >( st ) ... ) ) {}
+	 while ( ( ! in.eof() ) && seq< Rules ... >::template match< false >( in, de, std::forward< States >( st ) ... ) ) {}
 	 return true;
       }
    };
 
-   template< typename Rule >
+   template< typename ... Rules >
    struct plus
    {
       typedef plus key_type;
@@ -129,15 +144,13 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = st.template name< Rule >() + "+";
-	 st.template update< plus >( n, true );
+	 prepare1< plus, Rules ... >( st, "", "( ", " ", " )", "+" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 return de.template match< Must, Rule >( in, std::forward< States >( st ) ... ) && star< Rule >::template match< Must >( in, de, std::forward< States >( st ) ... );
+	 return seq< Rules ... >::template match< Must >( in, de, std::forward< States >( st ) ... ) && star< Rules ... >::template match< Must >( in, de, std::forward< States >( st ) ... );
       }
    };
 
@@ -155,9 +168,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule, Rules ... >();
-	 const std::string n = names< Rule, Rules ... >( st, "( ", " / ", " )" );
-	 st.template update< sor >( n, ! st.template name< sor >().compare( 0, 11, "pegtl::sor<" ) );
+	 prepare1< sor, Rules ... >( st, "", "( ", " / ", " )", "" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -167,63 +178,21 @@ namespace pegtl
       }
    };
 
-   template< typename ... > struct seq;
-
-   template<>
-   struct seq<>
-	 : success
-   {
-      template< bool Must, typename Input, typename Debug, typename ... States >
-      static bool i_match( Input &, Debug &, States && ... )
-      {
-	 return true;
-      }
-   };
-
-   template< typename Rule, typename... Rules >
-   struct seq< Rule, Rules ... >
-   {
-      typedef seq key_type;
-
-      template< typename Print >
-      static void prepare( Print & st )
-      {
-	 st.template insert< Rule, Rules ... >();
-	 const std::string n = names< Rule, Rules ... >( st, "( ", " ", " )" );
-	 st.template update< seq >( n, ! st.template name< seq >().compare( 0, 11, "pegtl::seq<" ) );
-      }
-
-      template< bool Must, typename Input, typename Debug, typename ... States >
-      static bool match( Input & in, Debug & de, States && ... st )
-      {
-	 typename Input::template marker< Must > h( in );
-	 return h( i_match< Must >( in, de, std::forward< States >( st ) ... ) );
-      }
-
-      template< bool Must, typename Input, typename Debug, typename ... States >
-      static bool i_match( Input & in, Debug & de, States && ... st )
-      {
-	 return de.template match< Must, Rule >( in, std::forward< States >( st ) ... ) && pegtl::seq< Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... );
-      }
-   };
-
-   template< typename Rule >
+   template< typename ... Rules >
    struct must
    {
-      typedef Rule key_type;
+      typedef must key_type;
 
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = "!" + st.template name< Rule >();
-	 st.template update< must >( n, true );
+	 prepare1< must, Rules ... >( st, "!", "( ", " ", " )", "" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
       static bool match( Input & in, Debug & de, States && ... st )
       {
-	 return de.template match< true, Rule >( in, std::forward< States >( st ) ... );
+	 return seq< Rules ... >::template match< true >( in, de, std::forward< States >( st ) ... );
       }
    };
 
@@ -235,9 +204,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = "&" + st.template name< Rule >();
-	 st.template update< at >( n, true );
+	 prepare1< at, Rule >( st, "&", "( ", " ", " )", "" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -256,9 +223,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Rule >();
-	 const std::string n = "!" + st.template name< Rule >();
-	 st.template update< not_at >( n, true );
+	 prepare1< not_at, Rule >( st, "!", "( ", " ", " )", "" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -286,45 +251,17 @@ namespace pegtl
       }
    };
 
-   template< typename Cond >
-   struct until1
-   {
-      typedef until1 key_type;
-
-      template< typename Print >
-      static void prepare( Print & st )
-      {
-	 st.template insert< Cond >();
-	 const std::string n = "@" + st.template name< Cond >();
-	 st.template update< until1 >( n, true );
-      }
-
-      template< bool Must, typename Input, typename Debug, typename ... States >
-      static bool match( Input & in, Debug & de, States && ... st )
-      {
-	 typename Input::template marker< Must > p( in );
-
-	 while ( ! de.template match< false, Cond >( in, std::forward< States >( st ) ... ) ) {
-	    if ( in.eof() ) {
-	       return p( false );
-	    }
-	    in.bump();
-	 }
-	 return p( true );
-      }
-   };
-
-   template< typename What, typename Cond >
-   struct until
+   template< typename Cond, typename ... Rules > struct until;
+   
+   template< typename Cond, typename Rule, typename ... Rules >
+   struct until< Cond, Rule, Rules ... >
    {
       typedef until key_type;
 
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< What, Cond >();
-	 const std::string n = "( " + st.template name< What >() + " % " + st.template name< Cond >() + " )";
-	 st.template update< until >( n, ! st.template name< until >().compare( 0, 13, "pegtl::until<" ) );
+	 prepare2< until, Cond, Rule, Rules ... >( st, "( ", " % ", " ", " )" );
       }
 
       template< bool Must, typename Input, typename Debug, typename ... States >
@@ -333,13 +270,39 @@ namespace pegtl
 	 typename Input::template marker< Must > p( in );
 
 	 while ( ! de.template match< false, Cond >( in, std::forward< States >( st ) ... ) ) {
-	    if ( in.eof() || ( ! de.template match< Must, What >( in, std::forward< States >( st ) ... ) ) ) {
+	    if ( in.eof() || ( ! seq< Rule, Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... ) ) ) {
 	       return p( false );
 	    }
 	 }
 	 return p( true );
       }
    };
+
+    template< typename Cond >
+    struct until< Cond >
+    {
+       typedef until key_type;
+
+       template< typename Print >
+       static void prepare( Print & st )
+       {
+	  prepare1< until, Cond >( st, "$", "", "", "", "" );
+       }
+
+       template< bool Must, typename Input, typename Debug, typename ... States >
+       static bool match( Input & in, Debug & de, States && ... st )
+       {
+         typename Input::template marker< Must > p( in );
+
+         while ( ! de.template match< false, Cond >( in, std::forward< States >( st ) ... ) ) {
+            if ( in.eof() ) {
+               return p( false );
+            }
+            in.bump();
+         }
+         return p( true );
+       }
+    };
 
    template< bool Must, typename Cond, typename ... Thens >
    struct cond2impl
@@ -349,9 +312,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Cond, Thens ... >();
-	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + names< Thens ... >( st, " ", " ", " " )() + " )";
-	 st.template update< cond2impl >( n, ! st.template name< cond2impl >().compare( 0, 17, "pegtl::cond2impl<" ) );
+	 prepare2< cond2impl, Cond, Thens ... >( st, "( ", ( Must ? " ->> " : " --> " ), " ", " )" );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -383,9 +344,7 @@ namespace pegtl
       template< typename Print >
       static void prepare( Print & st )
       {
-	 st.template insert< Cond, Then, Else >();
-	 const std::string n = "( " + st.template name< Cond >() + ( Must ? " ->> " : " --> " ) + st.template name< Then >() + " / " + st.template name< Else >() + " )";
-	 st.template update< cond3impl >( n, ! st.template name< cond3impl >().compare( 0, 17, "pegtl::cond3impl<" ) );
+	 prepare2< cond3impl, Cond, Then, Else >( st, "( ", ( Must ? " ->> " : " --> " ), " / ", " )" );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -428,7 +387,43 @@ namespace pegtl
 	 st.template update< pad >( e, ! st.template name< pad >().compare( 0, 11, "pegtl::pad<" ) );
       }
    };
-   
+
+   template< typename Rule, typename Glue >
+   struct list
+	 : seq< Rule, star< ifmust< Glue, Rule > > > {};
+
+   template< unsigned N, unsigned M, typename ... Rules >
+   struct rep2
+   {
+      typedef rep2 key_type;
+
+      template< typename Print >
+      static void prepare( Print & st )
+      {
+	 prepare1< rep2, Rules ... >( st, "", "( ", " ", " )", "{" + to_string( N ) + ',' + to_string( M ) + "}" );
+      }
+
+      template< bool Must, typename Input, typename Debug, typename ... States >
+      static bool match( Input & in, Debug & de, States && ... st )
+      {
+	 static_assert( N <= M, "pegtl: illegal expression rep< R, N, M > where N is greater than M" );
+
+	 typename Input::template marker< Must > p( in );
+
+	 for ( unsigned i = 0; i < N; ++i ) {
+	    if ( ! seq< Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... ) ) {
+	       return p( false );
+	    }
+	 }
+	 for ( unsigned i = N; i < M; ++i ) {
+	    if ( ! seq< Rules ... >::template i_match< Must >( in, de, std::forward< States >( st ) ... ) ) {
+	       return p( true );
+	    }
+	 }
+	 return p( not_at< seq< Rules ... > >::template match< Must >( in, de, std::forward< States >( st ) ... ) );
+      }
+   };
+
 } // pegtl
 
 #endif

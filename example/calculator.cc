@@ -82,7 +82,7 @@ namespace calculator
    // The grammar rules.
 
    struct read_number
-	 : seq< opt< list< '+', '-' > >, plus< digit > > {};
+	 : seq< opt< one< '+', '-' > >, plus< digit > > {};
 
    // This rule uses the rule read_number to match a
    // number in the input and, on success, applies the

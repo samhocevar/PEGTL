@@ -31,88 +31,27 @@ namespace pegtl
       }
    };
 
-   template< int C >
-   struct one
-   {
-      typedef one key_type;
-
-      template< typename Print >
-      static void prepare( Print & st )
-      {
-	 const std::string n = "\"" + escape( C ) + "\"";
-	 st.template update< one >( n, true );
-      }
-
-      template< bool, typename Input, typename Debug, typename ... States >
-      static bool match( Input & in, Debug &, States && ... )
-      {
-	 if ( in.eof() ) {
-	    return false;
-	 }
-	 character< Input > h( in );
-	 return h( h == C );
-      }
-   };
-
-   template< int C >
-   struct at_one
-	 : at< one< C > > {};
-
-   template< int C >
-   struct not_one
-   {
-      typedef not_one key_type;
-
-      template< typename Print >
-      static void prepare( Print & st )
-      {
-	 const std::string n = std::string( "\"[^" ) + escape( C ) + "]\"";
-	 st.template update< not_one >( n, true );
-      }
-
-      template< bool, typename Input, typename Debug, typename ... States >
-      static bool match( Input & in, Debug &, States && ... )
-      {
-	 if ( in.eof() ) {
-	    return false;
-	 }
-	 character< Input > h( in );
-	 return h( h != C );
-      }
-   };
-
-   template< int C >
-   struct at_not_one
-	 : at< not_one< C > > {};
-
-   template< int... Chars > struct list;
+   template< int... Chars > struct one;
 
    template<>
-   struct list<>
+   struct one<>
    {
-      static void d_i( std::ostream & )
-      {
-	 ;
-      }
-
-      static bool m_i( const int )
+      static bool i_match( const int )
       {
 	 return false;
       }
    };
 
    template< int Char, int... Chars >
-   struct list< Char, Chars... >
+   struct one< Char, Chars... >
    {
-      typedef list key_type;
+      typedef one key_type;
 
       template< typename Print >
       static void prepare( Print & st )
       {
-	 std::ostringstream o;
-	 d_i( o );
-	 const std::string n = std::string( "\"[" ) + o.str() + "]\"";
-	 st.template update< list >( n, true );
+	 const std::string n = ( sizeof ... ( Chars ) ) ? ( "\"[" + escaper< Char, Chars ... >::result() + "]\"" ) : ( '"' + escape( Char ) + '"' );
+	 st.template update< one >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -122,33 +61,35 @@ namespace pegtl
 	    return false;
 	 }
 	 character< Input > h( in );
-	 return h( m_i( h ) );
+	 return h( i_match( h ) );
       }
 
-      static void d_i( std::ostream & o )
+      static bool i_match( const int i )
       {
-	 o << escape( Char );
-	 list< Chars... >::d_i( o );
-      }
-
-      static bool m_i( const int i )
-      {
-	 return ( i == Char ) || list< Chars... >::m_i( i );
+	 return ( i == Char ) || one< Chars... >::i_match( i );
       }
    };
 
    template< int ... Chars >
-   struct not_list
+   struct at_one
+	 : at< one< Chars ... > > {};
+
+   template< int ... Chars > struct not_one;
+
+   template<>
+   struct not_one<>
+   { };
+
+   template< int Char, int ... Chars >
+   struct not_one< Char, Chars ... >
    {
-      typedef not_list key_type;
+      typedef not_one key_type;
 
       template< typename Print >
       static void prepare( Print & st )
       {
-	 std::ostringstream o;
-	 list< Chars ... >::d_i( o );
-	 const std::string n = std::string( "\"[^" ) + o.str() + "]\"";
-	 st.template update< not_list >( n, true );
+	 const std::string n = std::string( "\"[^" ) + escaper< Char, Chars ... >::result() + "]\"";
+	 st.template update< not_one >( n, true );
       }
 
       template< bool, typename Input, typename Debug, typename ... States >
@@ -158,17 +99,13 @@ namespace pegtl
 	    return false;
 	 }
 	 character< Input > h( in );
-	 return h( ! list< Chars ... >::m_i( h ) );
+	 return h( ! one< Char, Chars ... >::i_match( h ) );
       }
    };
 
    template< int ... Chars >
-   struct at_list
-	 : at< list< Chars ... > > {};
-
-   template< int... Chars >
-   struct at_not_list
-	 : at< not_list< Chars ... > > {};
+   struct at_not_one
+	 : at< not_one< Chars ... > > {};
 
    template< int C, int D >
    struct range
@@ -284,10 +221,6 @@ namespace pegtl
    struct at_string
 	 : at< string< Char, Chars ... > > {};
 
-   template< int Char, typename RulePadL, typename RulePadR = RulePadL >
-   struct pad_one
-	 : pad< one< Char >, RulePadL, RulePadR > {};
-
    struct digit
 	 : range< '0', '9' >
    {
@@ -370,7 +303,7 @@ namespace pegtl
 	 : sor< eof, crlf, lf, cr > {};
 
    struct blank
-	 : list< ' ', '\t' >
+	 : one< ' ', '\t' >
    {
       template< typename Print >
       static void prepare( Print & st )
@@ -380,7 +313,7 @@ namespace pegtl
    };
 
    struct space
-	 : list< ' ', '\n', '\r', '\t', '\v', '\f' >
+	 : one< ' ', '\n', '\r', '\t', '\v', '\f' >
    {
       template< typename Print >
       static void prepare( Print & st )
@@ -389,20 +322,9 @@ namespace pegtl
       }
    };
 
-   struct space_star
-	 : star< space > {};
-
-   struct space_plus
-	 : plus< space > {};
-
-   struct blank_star
-	 : star< blank > {};
-
-   struct blank_plus
-	 : plus< blank > {};
-
-   struct until_eol
-	 : until1< eol > {};
+   template< int Char, typename RulePadL, typename RulePadR = RulePadL >
+   struct pad_one
+	 : pad< one< Char >, RulePadL, RulePadR > {};
 
    struct space_until_eof
 	 : until< space, eof > {};
@@ -411,7 +333,7 @@ namespace pegtl
 	 : until< blank, eol > {};
 
    struct shebang
-	 : ifmust< string< '#', '!' >, until_eol > {};
+	 : ifmust< string< '#', '!' >, until< eol > > {};
 
 } // pegtl
 

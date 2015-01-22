@@ -8,14 +8,14 @@
 =Introduction=
 
 The Parsing Expression Grammar Template Library (PEGTL) is a C++0x library for creating parsers according to a Parsing Expression Grammar (PEG).
-Grammars are embedded as regular C++ code, and consist of template hierarchies of classes.
+Grammars are embedded as regular C++ code, and consist of hierarchies of template-instantiations of class templates.
 These hierarchies naturally correspond to the inductive definition of PEGs.
 The library extends on the subject of PEGs with new expression types, actions that can be attached to grammar rules, and mechanisms to ensure helpful diagnostics in case of parsing errors.
 PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://en.wikipedia.org/wiki/Parsing_expression_grammar Wikipedia page on PEGs] or this [http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf paper on PEGs].
 
 ===Status===
 
-Still in the middle of a series of smaller enhancements and additions on the road to 1.0 ... see the changelog at the end of the page.
+Still in the middle of a series of enhancements and additions on the road to 1.0, some of which are *incompatible* with earlier releases ... please *read the changelog* at the end of this documentation.
 
 ===Features===
 
@@ -39,11 +39,19 @@ Still in the middle of a series of smaller enhancements and additions on the roa
 
 ===Requirements===
 
-The PEGTL uses features from C++0x and requires GCC 4.3 with `-std=gnu++0x` to compile.
-It was developed under Mac OS X, but should work on any Unix or Unix-like operating system, like Linux.
-Only headers and libraries that are included with GCC 4.3 or the SUSv3 standard are used.
+*Compiler*
 
-A prospective PEGTL user should have a solid understanding of the C++ programming language, in particular with class templates and related compiler messages, and should be experienced with some language or grammar formalism like context-free grammars and/or their representation in (extended) Backus-Naur form, extended regular expressions, or of course parsing expression grammars themselves.
+The PEGTL uses features from the C++0x standard, in particular variadic templates and r-value references.
+For development, GCC 4.3 is used, but any other compiler with sufficient C++0x support should work too.
+
+*Operating System*
+
+The PEGTL is mostly operating-system agnostic, however some SUSv3 functions are used for file reading.
+For development, Mac OS X and Linux are used, but any other Unix or Unix-like operating system should work too.
+
+*Developer*
+
+A prospective PEGTL user should have a solid understanding of the C++ programming language, in particular of class templates and related compiler messages, and should be experienced with some language or grammar formalism like context-free grammars and/or their representation in (extended) Backus-Naur form, extended regular expressions, or of course parsing expression grammars themselves.
 
 ===Installation===
 
@@ -51,7 +59,7 @@ The latest PEGTL distribution is available from the [http://code.google.com/p/pe
 PEGTL is a header-only library that neither requires any compilation during installation, nor creates any libraries for applications to link against.
 To install, simple copy the directory `include/pegtl` and the header `include/pegtl.hh` to wherever is convenient, or simply to `/usr/include`.
 
-Projects using the PEGTL must use a compatible compiler and compatible compiler switches; in particular `-std=gnu++0x` must be used.
+Projects using the PEGTL must use a compatible compiler and compiler switches; for GCC 4.3, `-std=c++0x` or `-std=gnu++0x` must be used.
 The PEGTL consists of many very small functions; for best performance, production builds should be done with function-inlining enabled, or better yet with `-O2` or `-O3`.
 Client code using the PEGTL must only include the file `pegtl.hh`, not the files in the `pegtl` sub-folder.
 The file `pegtl.hh` includes the whole library, and all of the libraries' dependencies.
@@ -199,7 +207,7 @@ namespace example
    // some of the rules that are part of the PEGTL.
 
    struct grammar
-	 : seq< alpha, until< sor< alpha, digit >, eol > > {};
+	 : seq< alpha, until< eol, sor< alpha, digit > > > {};
 
    // The atomic rule 'alpha' matches any upper- or lower-case ASCII character.
    // The atomic rule 'digit' matches any ASCII digit.
@@ -207,7 +215,7 @@ namespace example
 
    // The rule combinator 'seq' stands for concatenation
    // The rule combinator 'sor' stands for ordered-choice, or sequenced-or.
-   // The rule combinator 'until' matches its first argument rule until the second argument rule matches.
+   // The rule combinator 'until' matches its second argument rule until the first argument rule matches.
 
    // Put together, this grammar is equivalent to the regular expression '^[[:alpha:]]([[:alpha:]]|[[:digit:]])*$'.
 
@@ -418,43 +426,47 @@ These tables show most of the PEGTL expression constructors, i.e. the _rules_ an
 ===Basic Rules===
 
 || *Expression* || *Basic Rule* || *Description* ||
-|| `e`       || `success`               || Success. ||
-|| `!e`      || `failure`               || Local failure. ||
-|| `R?`      || `opt< R >`              || Match "zero-or-one" times, equivalent to `sor< R, success >`. ||
-|| `R*`      || `star< R >`             || Match "zero-or-more" times, equivalent to `opt< plus< R > >`. ||
-|| `R+`      || `plus< R >`             || Match "one-or-more" times, equivalent to `seq< R, star< R > >`. ||
-|| `&C`      || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
-|| `!C`      || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
-|| `R T`     || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails. ||
-|| `R / T`   || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds. ||
-||           || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
-|| `C@`      || `until1< C >`           || Consumes input character-by-character until _rule_ `C` succeeds. ||
-|| `R % C`   || `until< R, C >`         || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming). ||
-||           || `must< R >`             || Equivalent to `R`, but converts local failure of `R` to global failure. ||
-|| `C --> R` || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once. ||
-|| `C ->> R` || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< seq< R, ... > >`. ||
-||           || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
-||           || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, seq< not_at< C >, must< T > > >`, but invokes `C` only once. ||
-||           || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`. ||
-|| `R{n}`    || `rep< R, n >`           || Equivalent to `seq< R, ..., R >` with `n` repetitions of `R`. ||
+|| `e`        || `success`               || Success. ||
+|| `!e`       || `failure`               || Local failure. ||
+||            || `eof`                   || Matches at "end-of-file" (should really be "end-of-input"). ||
+|| `&C`       || `at< C >`               || "And"-predicate, check whether `C` matches without consuming input. ||
+|| `!C`       || `not_at< C >`           || "Not"-predicate, check whether `C` does not match without consuming input. ||
+|| `R?`       || `opt< R, ... >`         || Match "zero-or-one" times, equivalent to `sor< R, success >`; variadic in `R`. ||
+|| `R*`       || `star< R, ... >`        || Match "zero-or-more" times, equivalent to `opt< plus< R > >`; variadic in `R`. ||
+|| `R+`       || `plus< R, ... >`        || Match "one-or-more" times, equivalent to `seq< R, star< R > >`; variadic in `R`. ||
+|| `R ...`    || `seq< R, ... >`         || "Sequence", or "concatenation", matches given rules in sequence until one fails; variadic in `R`. ||
+|| `R / ...`  || `sor< R, ... >`         || "Ordered-choice", or "sequenced-or", matches given rules in sequence until one succeeds; variadic with choice semantics. ||
+|| `$C`       || `until< C >`            || Consumes input byte-by-byte until `C` succeeds; specialisation of the more general `until` below. ||
+|| `C % R`    || `until< C, R, ... >`    || Matches `R` until `C` succeeds (endless loop if `R` succeeds without consuming); variadic in `R`. ||
+||            || `must< R, ... >`        || Equivalent to `R`, but converts local failure of `R` to global failure; variadic in `R`. ||
+|| `C ->> R`  || `ifmust< C, R, ... >`   || Equivalent to `seq< C, must< seq< R, ... > >`; variadic in `R`. ||
+|| `C --> R`  || `ifthen< C, R, ... >`   || Equivalent to `sor< seq< C, R ... >, not_at< C > >`, but invokes `C` only once; variadic in `R`. ||
+||            || `ifmustelse< C, R, T >` || Equivalent to `sor< seq< C, must< R > >, seq< not_at< C >, must< T > > >`, but invokes `C` only once. ||
+||            || `ifthenelse< C, R, T >` || Equivalent to `sor< seq< C, R >, seq< not_at< C >, T > >`, but invokes `C` only once. ||
+||            || `list< R, S >`          || Equivalent to `seq< R, star< ifmust< S, R > >`, i.e. to parse non-empty lists of `R`s separated by `S`s. ||
+||            || `pad< T, L, R = L >`    || Equivalent to `seq< star< L >, T, star< R > >`, but only `T` appears in diagnostic messages. ||
+|| `R{n}`     || `rep< n, R, ... >`      || Equivalent to `seq< R, ..., R >` with `n` repetitions of `R`; variadic in `R`. ||
+|| `R{n,m}`   || `rep2< n, m, R, ... >`  || Equivalent to `seq< R, ..., R, opt< R >, ..., opt< R >, not_at< R > >` with `n` repetitions of `R` and `m` repetitions of `opt< R >`; variadic in `R`. ||
 
 Note that, due to restrictions in the Google Wiki syntax, we use an 'e' instead of the letter epsilon.
 
-Note that the expression syntax for PEGTL extensions to the PEG formalism (`until1`, `until`, `ifthen`, `ifmust`) was invented for this library (i.e. `@`, `%`, `-->` and `->>`).
+Note that the expression syntax for PEGTL extensions to the PEG formalism like `until`, `ifthen`, or `ifmust` was invented for this library.
 The expression syntax with the curly braces for repetition was borrowed from Posix extended regular expressions.
+
+Note that some of the following _rules_ `foo< X >` are documented as *variadic in `X`*, which means that an arbitrary sequence of template arguments can be given for `X`.
+If not documented otherwise, the semantics of these _rules_ `foo` is equivalent to `foo< seq< X1, ..., Xn > >`.
 
 ===String Rules===
 
 || *Expression* || *String Rule* || *Description* ||
 || `.`       || `any` || Match any character. ||
-|| `"a"`     || `one< 'a' >` || Match given character. ||
-|| `[^a]`    || `not_one< 'a' >` || Match any other character. ||
-|| `[az]`    || `list< 'a', 'z' >` || Match character in list. ||
-|| `[^az]`   || `not_list< 'a', 'z' >` || Match character not in list. ||
+|| `"a"`     || `one< 'a' >` || Match given character (same as below). ||
+|| `[abc]`   || `one< 'a', 'b', 'c', ... >` || Match one of the given characters (variadic). ||
+|| `[^abc]`  || `not_one< 'a', 'b', 'c', ... >` || Match any of the characters not given (variadic). ||
 || `[a-z]`   || `range< 'a', 'z' >` || Match character in range. ||
 || `[^a-z]`  || `not_range< 'a', 'z' >` || Match character not in range. ||
-|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o' >` || Match given character sequence of arbitrary length. ||
-|| `"\n`     || `lf` || Match single line-feed. ||
+|| `"hallo"` || `string< 'h', 'a', 'l', 'l', 'o', ... >` || Match given character sequence (variadic). ||
+|| `"\n"`    || `lf` || Match single line-feed. ||
 || `"\r"`    || `cr` || Match single carriage-return. ||
 || `"\r\n"`  || `crlf` || Combined carriage-return and line-feed. ||
 || `$`       || `eol` || Match any end-of-line, including end-of-file. ||
@@ -466,17 +478,15 @@ The expression syntax with the curly braces for repetition was borrowed from Pos
 || `[[:alpha:]]`  || `alpha`  || Match any upper- or lower-case letter. ||
 || `[[:alnum:]]`  || `alnum`  || Match any upper- or lower-case letter or digit. ||
 || `[[:xdigit:]]` || `xdigit` || Match any hexadecimal digit, upper- or lower-case. ||
-|| || `space_star`      || Equivalent to `star< space >`. ||
-|| || `space_plus`      || Equivalent to `plus< space >`. ||
-|| || `blank_star`      || Equivalent to `star< blank >`. ||
-|| || `blank_plus`      || Equivalent to `plus< blank >`. ||
-|| || `until_eol`       || Equivalent to `until1< eol >`. ||
-|| || `blank_until_eol` || Equivalent to `until< blank, eol >`. ||
-|| || `space_until_eof` || Equivalent to `until< space, eof >`. ||
-|| || `shebang`         || Equivalent to `ifmust< string< '#', '!' >, until_eol >` ||
-|| || `identifier`      || Match a C-language identifier (alpha and digits and underscores, no leading digit). ||
-|| || `pad_one< 'a', L, R = L >` || Equivalent to `pad< one< 'a' >, L, R >`. ||
-|| `\N` || `capture< N >` || Match the string retrieved from its single _state_ argument `s` via `s.find( N )`. ||
+|| || `until_eol`             || Equivalent to `until< eol >`, this rule is deprecated. ||
+|| || `blank_until_eol`       || Equivalent to `until< blank, eol >`, this rule is deprecated. ||
+|| || `space_until_eof`       || Equivalent to `until< space, eof >`, this rule is deprecated. ||
+|| || `pad_one< 'a', L, R = L >` || Equivalent to `pad< one< 'a' >, L, R >`, this rule is deprecated. ||
+|| || `shebang`               || Equivalent to `ifmust< string< '#', '!' >, until_eol >` ||
+|| || `identifier`            || Match a C-language identifier (alphas and digits and underscores, no leading digit). ||
+|| `\N` || `capture< N >`     || Match the string retrieved from its single _state_ argument `s` via `s.find( N )`. ||
+
+Note that some of the very trivial convenience rules were removed in PEGTL version 0.22.
 
 Note that class `capture` is both an action and a rule; see `include/pegtl/rules_action.hh` for details.
 
@@ -495,8 +505,8 @@ With a `using namespace pegtl::ascii`, the definition of `string` _rules_ can be
 
 || *Action* || *Description* ||
 || `apply_nth< N, F, ... >`  || Apply all actions `F` to matched sub-string and N+1-st _state_ object. ||
-|| `apply_insert`            || Calls `c.insert( c.end(), s )`, given matched sub-string `s` and single _state_ argument `c`. ||
-|| `apply_push_back`         || Calls `c.push_back( s )`, given matched sub-string `s` and single _state_ argument `c`. ||
+|| `apply_insert`            || Calls `c.insert( c.end(), s )`, given matched sub-string `s` and a single _state_ argument `c`. ||
+|| `apply_push_back`         || Calls `c.push_back( s )`, given matched sub-string `s` and a single _state_ argument `c`. ||
 || `capture< N >`            || Stores the matched sub-string `s` in its single _state_ argument `c` via `c[ N ] = s`. ||
 
 Note that class `capture` is both an action and a rule; see `include/pegtl/rules_action.hh` for details.
@@ -551,7 +561,7 @@ Note that this version is also shorter, and therefore easier to read.
 
 {{{
    struct foo
-         : until< bar, eof > {};
+         : until< eof, bar > {};
 }}}
 
 ===Performance===
@@ -581,10 +591,25 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 =Changelog=
 
+*PEGTL version 0.22*
+
+  * Cleaned up the source to compile with `-std=c++0x -pedantic` (compliance).
+  * Cleaned out some superfluous compiler flags from the Makefile (minimalism).
+  * Changed the default compiler to `g++`, which can be overriden by `$CXX` (consistency).
+  * Cleaned up unittests for where `char` is signed but `-fno-strict-overflow` is not given (compliance).
+  * Removed `list/not_list/at_list/at_not_list`, but `one/not_one/at_one/at_not_one` are now variadic (orthogonality).
+  * Removed the redundant rules `space_star`, `space_plus`, `blank_star`, and `blank_plus` (minimalism).
+  * Added new rule class `list` (not to be confused with the old, very different, rule `list`) (convenience).
+  * Changed class `seq` to invoke the `marker` with a modified `Must` flag for single-rule sequences (performance).
+  * Changed rule class `until1` to be a specialisation of `until`, rather than have a different name (consistency).
+  * Changed around *the order of the template arguments of the `until` rule* (consistency and flexibility).
+  * Changed around the order of the template arguments of the `rep` rule and reduced to strict repeat (minimalism).
+  * Changed many rule classes from one template argument to variadic sequence of arguments (flexibility).
+
 *PEGTL version 0.21*
 
-  * Changed the pretty-printing of rules, this is work in progress (aesthetics).
-  * Fixed the exception that occurred when mmap()ing an empty file (correctness).
+  * Changed the pretty-printing of _rules_, this is work in progress (aesthetics).
+  * Fixed the exception that occurred when `mmap()`ing an empty file (correctness).
 
 *PEGTL version 0.20*
 
@@ -676,8 +701,9 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 ===Thank You===
 
   * Christopher Diggins and the [http://yard-parser.sourceforge.net YARD parser].
-  * Stephan Beal, for the bug reports, and interesting suggestions and discussions.
-  * Johannes Overmann, for `streplace`, the best refactoring tool for Emacs users ;-)
+  * Stephan Beal, for the bug reports, suggestions and discussions.
+  * Johannes Overmann, for his invaluable [http://jo.ath.cx/soft/streplace/ streplace] command-line tool.
+  * Daniel Frey, for the bug reports, suggestions and discussions.
 
 =License=
 

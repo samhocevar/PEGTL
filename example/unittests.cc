@@ -21,7 +21,7 @@ namespace
    void s( const std::string & i )
    {
       if ( ! test_parse< Rule >( i ) ) {
-	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " failed" );
+	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " failed on input \"" << i << "\"" );
 	 ++failed;
 	 return;
       }
@@ -32,7 +32,7 @@ namespace
    void f( const std::string & i )
    {
       if ( test_parse< Rule >( i ) ) {
-	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " succeeded" );
+	 PEGTL_PRINT( __PRETTY_FUNCTION__ << " succeeded on input \"" << i << "\"" );
 	 ++failed;
 	 return;
       }
@@ -61,7 +61,8 @@ namespace
    {
       PEGTL_PRINT( __FUNCTION__ << " " << int( A ) );
 
-      for ( char c = 0; ! ( c & 0x80 ); ++c ) {
+      for ( int i = 0; ! ( i & 0x80 ); ++i ) {
+	 const char c = char( i );
 	 const std::string t( 1, c );
 	 assert( t.size() == 1 );
 	 b< lf >( t, c == '\n' );
@@ -72,13 +73,13 @@ namespace
 	 s< opt< one< A > > >( t );
 	 s< star< one< A > > >( t );
 	 b< plus< one< A > > >( t, c == A );
-	 s< rep< one< A >, 0 > >( t );
-	 b< rep< one< A >, 1 > >( t, c == A );
-	 f< rep< one< A >, 2 > >( t );
-	 f< rep< one< 'a' >, 2 > >( t );
-	 f< rep< one< 'Z' >, 2 > >( t );
-	 f< rep< one< '5' >, 2 > >( t );
-	 f< rep< one< '\0' >, 2 > >( t );
+	 //	 s< rep< 0, one< A > > >( t );
+	 b< rep< 1, one< A > > >( t, c == A );
+	 f< rep< 2, one< A > > >( t );
+	 f< rep< 2, one< 'a' > > >( t );
+	 f< rep< 2, one< 'Z' > > >( t );
+	 f< rep< 2, one< '5' > > >( t );
+	 f< rep< 2, one< '\0' > > >( t );
 	 b< one< A > >( t, c == A );
 	 b< at_one< A > >( t, c == A );
 	 b< seq< at_one< A >, one< A > > >( t, c == A );
@@ -96,15 +97,15 @@ namespace
 	 b< string< A > >( t, c == A );
 	 b< at_string< A > >( t, c == A );
 	 b< seq< at_string< A >, string< A > > >( t, c == A );
-	 b< list< A > >( t, c == A );
-	 b< at_list< A > >( t, c == A );
-	 b< seq< at_list< A >, list< A > > >( t, c == A );
+	 b< one< A > >( t, c == A );
+	 b< at_one< A > >( t, c == A );
+	 b< seq< at_one< A >, one< A > > >( t, c == A );
 	 b< range< A, A > >( t, c == A );
 	 b< at_range< A, A > >( t, c == A );
 	 b< seq< at_range< A, A >, range< A, A > > >( t, c == A );
-	 b< not_list< A > >( t, c != A );
-	 b< at_not_list< A > >( t, c != A );
-	 b< seq< at_not_list< A >, not_list< A > > >( t, c != A );
+	 b< not_one< A > >( t, c != A );
+	 b< at_not_one< A > >( t, c != A );
+	 b< seq< at_not_one< A >, not_one< A > > >( t, c != A );
 	 b< not_range< A, A > >( t, c != A );
 	 b< at_not_range< A, A > >( t, c != A );
 	 b< seq< at_not_range< A, A >, not_range< A, A > > >( t, c != A );
@@ -129,9 +130,9 @@ namespace
       s< seq< sor< bbd, abc >, abc, eof > >( t );
       s< seq< sor< abd, abc >, abc, eof > >( t );
 
-      s< rep< abc, 1 > >( t );
-      s< rep< abc, 2 > >( t );
-      f< rep< abc, 3 > >( t );
+      s< rep< 1, abc > >( t );
+      s< rep< 2, abc > >( t );
+      f< rep< 3, abc > >( t );
       s< star< abc > >( t );
       s< plus< abc > >( t );
       s< seq< plus< abc >, star< abc >, eol > >( t );
@@ -145,21 +146,21 @@ namespace
 
       s< seq< plus< abc >, one< 'd' > > >( d );
       s< seq< star< abc >, one< 'd' > > >( d );
-      s< seq< rep< abc, 2 >, one< 'd' > > >( d );
-      f< seq< rep< abc, 2 >, abc > >( d );
+      s< seq< rep< 2, abc >, one< 'd' > > >( d );
+      f< seq< rep< 2, abc >, abc > >( d );
       s< seq< abc, abc, one< 'd' > > >( d );
 
       s< must< abc > >( t );
       f< must< one< 'd' > > >( t );
-      s< until1< one< 'd' > > >( d );
-      s< until1< one< 'a' > > >( d );
-      s< until1< one< 'c' > > >( d );
-      f< until1< one< 'd' > > >( t );
+      s< until< one< 'd' > > >( d );
+      s< until< one< 'a' > > >( d );
+      s< until< one< 'c' > > >( d );
+      f< until< one< 'd' > > >( t );
 
-      s< until< one< 'b' >, one< 'a' > > >( t );
-      f< until< one< 'b' >, one< 'c' > > >( t );
       s< until< one< 'a' >, one< 'b' > > >( t );
-      f< until< one< 'a' >, one< 'c' > > >( t );
+      f< until< one< 'c' >, one< 'b' > > >( t );
+      s< until< one< 'b' >, one< 'a' > > >( t );
+      f< until< one< 'c' >, one< 'a' > > >( t );
 
       s< ifthen< one< 'a' >, one< 'b' > > >( t );
       f< ifthen< one< 'a' >, one< 'c' > > >( t );
@@ -186,6 +187,17 @@ namespace
       f< ifmustelse< one< 'a' >, one< 'c' >, one< 'z' > > >( t );
       f< ifmustelse< one< 'b' >, one< 'z' >, one< 'z' > > >( t );
       s< ifmustelse< one< 'b' >, one< 'z' >, one< 'a' > > >( t );
+
+      f< list< one< 'a' >, one< 'b' > > >( "" );
+      f< list< one< 'a' >, one< 'b' > > >( "b" );
+      s< list< one< 'a' >, one< 'b' > > >( "a" );
+      s< list< one< 'a' >, one< 'b' > > >( "aba" );
+      s< list< one< 'a' >, one< 'b' > > >( "ababa" );
+      f< list< one< 'a' >, one< 'b' > > >( "ba" );
+      f< list< one< 'a' >, one< 'b' > > >( " ba" );
+      f< list< one< 'a' >, one< 'b' > > >( "ab " );
+      f< list< one< 'a' >, one< 'b' > > >( " a" );
+      f< list< one< 'a' >, one< 'b' > > >( " aba" );
    }
 
 } //

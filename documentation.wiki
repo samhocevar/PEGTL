@@ -15,7 +15,7 @@ PEGs are similar to Context-Free Grammars (CFGs); for a description see [http://
 
 ===Status===
 
-We're at PEGTL version 0.19, which mainly includes an overhauled documentation, but also continues the series of smaller enhancements and additions on the road to 1.0; see the changelog at the end of the page.
+We're at PEGTL version 0.20, which mainly includes an overhauled documentation, but also continues the series of smaller enhancements and additions on the road to 1.0; see the changelog at the end of the page.
 
 ===Features===
 
@@ -260,7 +260,7 @@ This is the fastest way of parsing a file, and is recommended as long as the vir
 
 *Using a Stream*
 
-The third possibility is also usually the slowest, however it also works with very large files that do not fit into memory.
+The third possibility is usually the slowest, however it also works with very large files that do not fit into memory.
 Since the stream allows only single-pass iteration, it *must* be used with one of the parser functions designed for input iterators.
 
 {{{
@@ -561,6 +561,7 @@ Elapsed time of -- successfully -- parsing some large Scheme file on my notebook
 || `-O1`    || `mmap` || `smart` || 0.4s ||
 || `-O3`    || `mmap` || `smart` || 0.35s ||
 || `-Os`    || `mmap` || `smart` || 0.8s ||
+|| `-O0`    || `mmap` || `smart` || 4.6s ||
 
 ===Specialisations===
 
@@ -576,6 +577,10 @@ The macro can be defined by adding `-DPEGTL_IMPURE_OPTIMISATIONS` to the compile
 
 
 =Changelog=
+
+*PEGTL version 0.20*
+
+  * Added the missing `pegtl.hh` header file to the release archive...
 
 *PEGTL version 0.19*
 

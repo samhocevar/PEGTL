@@ -188,7 +188,7 @@ namespace pegtl
       static bool match( Input & in, Debug & de, States && ... st )
       {
 	 typename Input::template marker< false > p( in );
-	 return ! de.template match< ! Must, Rule >( in, std::forward< States >( st ) ... );
+	 return ! de.template match< false, Rule >( in, std::forward< States >( st ) ... );
       }
    };
 
